@@ -1151,17 +1151,19 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
   const moonGroup = useRef<THREE.Group>(null);
   const phase = useRef(-0.86);
   const earth = PLANETS.find((body) => body.id === "earth")!;
+  const sunX = -12.2;
+  const sunDisplayRadius = SUN.radius * 1.28;
   const moonOrbit = useMemo(
     () => ({
-      radiusX: 8,
-      radiusY: 2.7,
-      depth: 0.58,
+      radiusX: 6.6,
+      radiusY: 2.5,
+      depth: 0.54,
       points: Array.from({ length: 65 }, (_, index) => {
         const angle = (index / 64) * Math.PI * 2;
         return new THREE.Vector3(
-          Math.cos(angle) * 8,
-          Math.sin(angle) * 2.7,
-          Math.sin(angle) * 0.58,
+          Math.cos(angle) * 6.6,
+          Math.sin(angle) * 2.5,
+          Math.sin(angle) * 0.54,
         );
       }),
     }),
@@ -1184,18 +1186,18 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
       {overlays.light && (
         <>
           <pointLight
-            position={[-8.5, 0, 0]}
+            position={[sunX, 0, 0]}
             intensity={2100}
-            distance={44}
+            distance={52}
             decay={1.25}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
           />
-          <directionalLight position={[-9, 0, 0]} intensity={2.4} />
+          <directionalLight position={[sunX - 0.5, 0, 0]} intensity={2.4} />
         </>
       )}
-      <group position={[-8.5, 0, 0]}>
+      <group position={[sunX, 0, 0]}>
         <CelestialSphere body={SUN} labels={overlays.labels} speed={speed} playing={playing} scale={1.28} />
       </group>
       <group position={[0, 0, 0]} name="body-earth">
@@ -1203,8 +1205,8 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
       </group>
       {overlays.light && (
         <LightStream
-          from={[-5.5, 0, 0]}
-          to={[7.5, 0, 0]}
+          from={[sunX + sunDisplayRadius, 0, 0]}
+          to={[moonOrbit.radiusX + 0.7, 0, 0]}
           sourceRadius={2.3}
           targetRadius={1.4}
           playing={playing}
@@ -1234,9 +1236,19 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
   );
 }
 
-function cameraPreset(mode: Mode) {
+function cameraPreset(mode: Mode, aspect: number) {
   if (mode === "solar-system" || mode === "motion") {
     return { position: new THREE.Vector3(0, 17, 28), target: new THREE.Vector3(0, 0, 0) };
+  }
+  if (mode === "lunar-eclipse") {
+    const sceneHalfWidth = 12;
+    const verticalHalfFov = THREE.MathUtils.degToRad(24);
+    const distanceToFit = sceneHalfWidth / (Math.tan(verticalHalfFov) * Math.max(0.42, aspect));
+    const cameraDistance = Math.max(27.5, distanceToFit * 1.08);
+    return {
+      position: new THREE.Vector3(-3.7, cameraDistance * 0.21, cameraDistance),
+      target: new THREE.Vector3(-3.7, 0, 0),
+    };
   }
   return { position: new THREE.Vector3(0, 5.4, 22), target: new THREE.Vector3(0, 0, 0) };
 }
@@ -1254,7 +1266,7 @@ function CameraRig({
   resetKey: number;
   reducedMotion: boolean;
 }) {
-  const { camera, scene } = useThree();
+  const { camera, scene, size } = useThree();
   const transition = useRef({
     active: false,
     elapsed: 0,
@@ -1270,7 +1282,7 @@ function CameraRig({
     const controls = controlsRef.current;
     if (!controls) return;
 
-    const preset = cameraPreset(mode);
+    const preset = cameraPreset(mode, size.width / size.height);
     let target = preset.target.clone();
     let position = preset.position.clone();
     if (focusedBody && (mode === "solar-system" || mode === "motion")) {
@@ -1297,7 +1309,7 @@ function CameraRig({
       controls.target.copy(target);
       controls.update();
     }
-  }, [camera, controlsRef, focusedBody, mode, reducedMotion, resetKey, scene]);
+  }, [camera, controlsRef, focusedBody, mode, reducedMotion, resetKey, scene, size.height, size.width]);
 
   useFrame((_, delta) => {
     const controls = controlsRef.current;
