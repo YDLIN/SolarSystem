@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   ECLIPSE_LAYOUT,
+  eclipseObservationState,
   eclipseOrbitPosition,
   eclipseTargetPhase,
   nextForwardEclipsePhase,
@@ -41,4 +42,38 @@ test("shared teaching scale leaves clearance between the Sun and Moon orbit", ()
   const moonLeftEdge = moonAtSolarEclipse.x - 0.42 * ECLIPSE_LAYOUT.moonScale;
 
   assert.ok(sunRightEdge < moonLeftEdge);
+});
+
+test("solar eclipse observation reaches totality at the aligned phase", () => {
+  const observation = eclipseObservationState(
+    "solar-eclipse",
+    eclipseTargetPhase("solar-eclipse"),
+  );
+
+  assert.ok(Math.abs(observation.occluderX) < EPSILON);
+  assert.ok(Math.abs(observation.occluderY) < EPSILON);
+  assert.equal(observation.stage, "total");
+  assert.equal(observation.stageLabel, "日全食");
+  assert.ok(observation.coverage >= 0.985);
+});
+
+test("lunar eclipse observation places the Moon inside Earth's umbra at peak", () => {
+  const observation = eclipseObservationState(
+    "lunar-eclipse",
+    eclipseTargetPhase("lunar-eclipse"),
+  );
+
+  assert.equal(observation.stage, "total");
+  assert.equal(observation.stageLabel, "月全食");
+  assert.ok(observation.coverage >= 0.985);
+});
+
+test("observation does not report an eclipse far from alignment", () => {
+  const solar = eclipseObservationState("solar-eclipse", 0);
+  const lunar = eclipseObservationState("lunar-eclipse", Math.PI);
+
+  assert.equal(solar.stage, "none");
+  assert.equal(lunar.stage, "none");
+  assert.equal(solar.coverage, 0);
+  assert.equal(lunar.coverage, 0);
 });

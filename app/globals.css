@@ -89,6 +89,7 @@ input:focus-visible {
 .lesson-strip,
 .body-fact,
 .settings-panel,
+.eclipse-observation,
 .bottom-controls {
   pointer-events: auto;
 }
@@ -437,6 +438,47 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
+.eclipse-observation {
+  position: absolute;
+  z-index: 9;
+  right: 22px;
+  bottom: 153px;
+  width: min(280px, calc(100% - 44px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 196, 77, 0.34);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+  pointer-events: none;
+}
+
+.eclipse-observation-heading {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.eclipse-observation-heading span {
+  color: var(--muted);
+}
+
+.eclipse-observation-heading strong {
+  color: var(--sun);
+  font-size: 12px;
+}
+
+.eclipse-observation canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
 .bottom-controls {
   position: absolute;
   z-index: 10;
@@ -670,6 +712,17 @@ input:focus-visible {
     right: 12px;
   }
 
+  .eclipse-observation {
+    right: 8px;
+    bottom: 158px;
+    width: 190px;
+  }
+
+  .eclipse-observation-heading {
+    min-height: 30px;
+    padding: 0 8px;
+  }
+
   .bottom-controls {
     bottom: max(8px, env(safe-area-inset-bottom));
     gap: 5px;
@@ -696,6 +749,10 @@ input:focus-visible {
 }
 
 @media (max-height: 650px) and (orientation: landscape) {
+  .solar-app {
+    min-height: 320px;
+  }
+
   .app-header {
     padding: 10px 14px;
   }
@@ -706,6 +763,16 @@ input:focus-visible {
 
   .body-fact {
     top: 66px;
+  }
+
+  .eclipse-observation {
+    right: 8px;
+    bottom: 120px;
+    width: 160px;
+  }
+
+  .eclipse-observation-heading {
+    min-height: 28px;
   }
 
   .bottom-controls {

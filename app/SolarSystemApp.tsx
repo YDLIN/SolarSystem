@@ -15,12 +15,13 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { MutableRefObject, RefObject } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import LightStream from "./LightStream";
 import {
   ECLIPSE_LAYOUT,
+  eclipseObservationState,
   eclipseOrbitPosition,
   eclipseTargetPhase,
   nextForwardEclipsePhase,
@@ -1201,6 +1202,301 @@ function DayNightScene({ playing, speed, overlays }: { playing: boolean; speed: 
   );
 }
 
+function drawObservationBackground(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  const background = context.createRadialGradient(
+    width * 0.52,
+    height * 0.45,
+    0,
+    width * 0.52,
+    height * 0.45,
+    Math.max(width, height) * 0.72,
+  );
+  background.addColorStop(0, "#171723");
+  background.addColorStop(0.55, "#090a11");
+  background.addColorStop(1, "#030407");
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "rgba(255, 255, 255, 0.46)";
+  for (let index = 0; index < 18; index += 1) {
+    const x = (((index * 67 + 23) % 193) / 193) * width;
+    const y = (((index * 41 + 17) % 107) / 107) * height;
+    const size = index % 5 === 0 ? 1.1 : 0.65;
+    context.beginPath();
+    context.arc(x, y, size, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
+function drawSolarObservation(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  phase: number,
+) {
+  const observation = eclipseObservationState("solar-eclipse", phase);
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(height * 0.31, width * 0.19);
+  const moonX = centerX + observation.occluderX * radius;
+  const moonY = centerY + observation.occluderY * radius;
+
+  drawObservationBackground(context, width, height);
+
+  const corona = context.createRadialGradient(
+    centerX,
+    centerY,
+    radius * 0.72,
+    centerX,
+    centerY,
+    radius * 1.85,
+  );
+  corona.addColorStop(0, "rgba(255, 250, 213, 0.92)");
+  corona.addColorStop(0.22, "rgba(255, 224, 145, 0.38)");
+  corona.addColorStop(0.62, "rgba(255, 196, 77, 0.12)");
+  corona.addColorStop(1, "rgba(255, 196, 77, 0)");
+  context.fillStyle = corona;
+  context.beginPath();
+  context.arc(centerX, centerY, radius * 1.85, 0, Math.PI * 2);
+  context.fill();
+
+  const sun = context.createRadialGradient(
+    centerX - radius * 0.26,
+    centerY - radius * 0.3,
+    radius * 0.08,
+    centerX,
+    centerY,
+    radius,
+  );
+  sun.addColorStop(0, "#fff7b0");
+  sun.addColorStop(0.48, "#ffd24e");
+  sun.addColorStop(1, "#f28a20");
+  context.fillStyle = sun;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+
+  const moon = context.createRadialGradient(
+    moonX - radius * 0.18,
+    moonY - radius * 0.2,
+    radius * 0.05,
+    moonX,
+    moonY,
+    radius * observation.occluderRadius,
+  );
+  moon.addColorStop(0, "#17191d");
+  moon.addColorStop(0.72, "#08090b");
+  moon.addColorStop(1, "#020203");
+  context.fillStyle = moon;
+  context.beginPath();
+  context.arc(moonX, moonY, radius * observation.occluderRadius, 0, Math.PI * 2);
+  context.fill();
+
+  if (observation.stage === "total") {
+    context.strokeStyle = "rgba(255, 247, 214, 0.9)";
+    context.lineWidth = Math.max(1, radius * 0.025);
+    context.beginPath();
+    context.arc(moonX, moonY, radius * observation.occluderRadius * 1.015, 0, Math.PI * 2);
+    context.stroke();
+  }
+}
+
+function drawMoonDisc(
+  context: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  radius: number,
+) {
+  const moon = context.createRadialGradient(
+    centerX - radius * 0.32,
+    centerY - radius * 0.34,
+    radius * 0.06,
+    centerX,
+    centerY,
+    radius,
+  );
+  moon.addColorStop(0, "#fffbe7");
+  moon.addColorStop(0.58, "#d8d4c6");
+  moon.addColorStop(1, "#8d8b85");
+  context.fillStyle = moon;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+
+  const craters = [
+    [-0.34, -0.22, 0.12],
+    [0.26, -0.33, 0.09],
+    [0.38, 0.13, 0.14],
+    [-0.18, 0.32, 0.1],
+    [0.04, 0.04, 0.07],
+  ] as const;
+  context.fillStyle = "rgba(79, 78, 76, 0.2)";
+  craters.forEach(([x, y, craterRadius]) => {
+    context.beginPath();
+    context.arc(
+      centerX + x * radius,
+      centerY + y * radius,
+      craterRadius * radius,
+      0,
+      Math.PI * 2,
+    );
+    context.fill();
+  });
+}
+
+function drawLunarObservation(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  phase: number,
+) {
+  const observation = eclipseObservationState("lunar-eclipse", phase);
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(height * 0.32, width * 0.19);
+  const shadowX = centerX + observation.occluderX * radius;
+  const shadowY = centerY + observation.occluderY * radius;
+
+  drawObservationBackground(context, width, height);
+
+  const moonGlow = context.createRadialGradient(
+    centerX,
+    centerY,
+    radius * 0.78,
+    centerX,
+    centerY,
+    radius * 1.48,
+  );
+  moonGlow.addColorStop(0, "rgba(232, 229, 211, 0.28)");
+  moonGlow.addColorStop(1, "rgba(232, 229, 211, 0)");
+  context.fillStyle = moonGlow;
+  context.beginPath();
+  context.arc(centerX, centerY, radius * 1.48, 0, Math.PI * 2);
+  context.fill();
+
+  drawMoonDisc(context, centerX, centerY, radius);
+
+  context.save();
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.clip();
+
+  const penumbra = context.createRadialGradient(
+    shadowX,
+    shadowY,
+    radius * observation.occluderRadius * 0.72,
+    shadowX,
+    shadowY,
+    radius * observation.penumbraRadius,
+  );
+  penumbra.addColorStop(0, "rgba(42, 24, 28, 0.46)");
+  penumbra.addColorStop(0.72, "rgba(42, 24, 28, 0.23)");
+  penumbra.addColorStop(1, "rgba(42, 24, 28, 0)");
+  context.fillStyle = penumbra;
+  context.beginPath();
+  context.arc(shadowX, shadowY, radius * observation.penumbraRadius, 0, Math.PI * 2);
+  context.fill();
+
+  const umbra = context.createRadialGradient(
+    shadowX,
+    shadowY,
+    0,
+    shadowX,
+    shadowY,
+    radius * observation.occluderRadius,
+  );
+  umbra.addColorStop(0, "rgba(147, 52, 30, 0.82)");
+  umbra.addColorStop(0.56, "rgba(105, 34, 27, 0.84)");
+  umbra.addColorStop(1, "rgba(29, 16, 21, 0.94)");
+  context.fillStyle = umbra;
+  context.beginPath();
+  context.arc(shadowX, shadowY, radius * observation.occluderRadius, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+
+  context.strokeStyle = "rgba(255, 244, 215, 0.28)";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.stroke();
+}
+
+function EclipseObservationWindow({
+  kind,
+  phaseRef,
+}: {
+  kind: EclipseKind;
+  phaseRef: MutableRefObject<number>;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [stageLabel, setStageLabel] = useState(
+    kind === "solar-eclipse" ? "日全食" : "月全食",
+  );
+  const title = kind === "solar-eclipse" ? "从地球看太阳" : "从地球看月亮";
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    let animationFrame = 0;
+    let previousStage = "";
+
+    const draw = () => {
+      const bounds = canvas.getBoundingClientRect();
+      const width = Math.max(1, bounds.width);
+      const height = Math.max(1, bounds.height);
+      const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+      const pixelWidth = Math.round(width * pixelRatio);
+      const pixelHeight = Math.round(height * pixelRatio);
+
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+      const phase = phaseRef.current;
+      const observation = eclipseObservationState(kind, phase);
+      if (kind === "solar-eclipse") {
+        drawSolarObservation(context, width, height, phase);
+      } else {
+        drawLunarObservation(context, width, height, phase);
+      }
+
+      if (observation.stageLabel !== previousStage) {
+        previousStage = observation.stageLabel;
+        setStageLabel(observation.stageLabel);
+      }
+      animationFrame = window.requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [kind, phaseRef]);
+
+  return (
+    <aside className="eclipse-observation" aria-label={`${title}观测演示`}>
+      <div className="eclipse-observation-heading">
+        <span>{title}</span>
+        <strong aria-live="polite">{stageLabel}</strong>
+      </div>
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label={`${title}，当前为${stageLabel}`}
+      >
+        {title}的食相演示，当前为{stageLabel}。
+      </canvas>
+    </aside>
+  );
+}
+
 function EclipseShadowCone({
   kind,
   moonRef,
@@ -1269,12 +1565,14 @@ function EclipseScene({
   speed,
   overlays,
   reducedMotion,
+  phaseRef,
 }: {
   kind: EclipseKind;
   playing: boolean;
   speed: number;
   overlays: OverlayState;
   reducedMotion: boolean;
+  phaseRef: MutableRefObject<number>;
 }) {
   const moonGroup = useRef<THREE.Group>(null);
   const initialPhase = eclipseTargetPhase(kind);
@@ -1298,9 +1596,11 @@ function EclipseScene({
   );
 
   useEffect(() => {
+    phaseRef.current = phase.current;
     if (previousKind.current === kind) {
       if (reducedMotion && transition.current.active) {
         phase.current = transition.current.targetPhase;
+        phaseRef.current = phase.current;
         transition.current.active = false;
       }
       return;
@@ -1310,6 +1610,7 @@ function EclipseScene({
 
     if (reducedMotion) {
       phase.current = targetPhase;
+      phaseRef.current = phase.current;
       transition.current.active = false;
       return;
     }
@@ -1320,7 +1621,7 @@ function EclipseScene({
       startPhase: phase.current,
       targetPhase,
     };
-  }, [kind, reducedMotion]);
+  }, [kind, phaseRef, reducedMotion]);
 
   useFrame((_, delta) => {
     if (!moonGroup.current) return;
@@ -1341,6 +1642,7 @@ function EclipseScene({
 
     const position = eclipseOrbitPosition(phase.current);
     moonGroup.current.position.set(position.x, position.y, position.z);
+    phaseRef.current = phase.current;
   });
 
   return (
@@ -1529,6 +1831,7 @@ function SolarSystemCanvas({
   overlays,
   resetKey,
   reducedMotion,
+  eclipsePhaseRef,
   onSelect,
 }: {
   mode: Mode;
@@ -1538,6 +1841,7 @@ function SolarSystemCanvas({
   overlays: OverlayState;
   resetKey: number;
   reducedMotion: boolean;
+  eclipsePhaseRef: MutableRefObject<number>;
   onSelect: (body: CelestialBody) => void;
 }) {
   const controlsRef = useRef<OrbitControlsImpl>(null);
@@ -1571,6 +1875,7 @@ function SolarSystemCanvas({
           speed={speed}
           overlays={overlays}
           reducedMotion={reducedMotion}
+          phaseRef={eclipsePhaseRef}
         />
       )}
       <OrbitControls
@@ -1633,6 +1938,7 @@ export default function SolarSystemApp() {
     light: true,
     moon: true,
   });
+  const eclipsePhaseRef = useRef(eclipseTargetPhase("solar-eclipse"));
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1658,6 +1964,13 @@ export default function SolarSystemApp() {
   };
 
   const changeMode = (nextMode: Mode) => {
+    const enteringEclipse =
+      (nextMode === "solar-eclipse" || nextMode === "lunar-eclipse")
+      && mode !== "solar-eclipse"
+      && mode !== "lunar-eclipse";
+    if (enteringEclipse) {
+      eclipsePhaseRef.current = eclipseTargetPhase(nextMode);
+    }
     setMode(nextMode);
     setFocusedBody(null);
     setPlaying(!reducedMotion);
@@ -1692,6 +2005,7 @@ export default function SolarSystemApp() {
           overlays={effectiveOverlays}
           resetKey={resetKey}
           reducedMotion={reducedMotion}
+          eclipsePhaseRef={eclipsePhaseRef}
           onSelect={selectBody}
         />
       </div>
@@ -1811,6 +2125,10 @@ export default function SolarSystemApp() {
             );
           })}
         </aside>
+      )}
+
+      {(mode === "solar-eclipse" || mode === "lunar-eclipse") && (
+        <EclipseObservationWindow kind={mode} phaseRef={eclipsePhaseRef} />
       )}
 
       <div className="bottom-controls">
