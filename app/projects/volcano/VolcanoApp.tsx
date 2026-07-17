@@ -53,7 +53,7 @@ const HOTSPOTS: Record<VolcanoHotspotId, Hotspot> = {
     name: "软流圈",
     eyebrow: "正在观察",
     fact: "这里的岩石温度很高，但大部分仍是固体；它能在漫长时间里缓慢流动。",
-    position: [-4.4, -5.4, 1.2],
+    position: [-4.4, -5.4, 4.18],
     cameraOffset: [5.8, 3.2, 7.4],
   },
   "melt-zone": {
@@ -61,7 +61,7 @@ const HOTSPOTS: Record<VolcanoHotspotId, Hotspot> = {
     name: "部分熔融区",
     eyebrow: "岩浆的起点",
     fact: "地幔上涌时压力降低，只有一部分矿物先熔化，形成玄武质岩浆。",
-    position: [-1.4, -4.45, 0.5],
+    position: [-1.4, -4.45, 4.18],
     cameraOffset: [5.4, 3.4, 7],
   },
   "magma-chamber": {
@@ -69,7 +69,7 @@ const HOTSPOTS: Record<VolcanoHotspotId, Hotspot> = {
     name: "岩浆储集区",
     eyebrow: "岩浆集合处",
     fact: "分散的小股岩浆在岩层下方汇聚，并寻找裂隙继续向上移动。",
-    position: [0.2, -2.45, 0],
+    position: [0.2, -2.45, 4.18],
     cameraOffset: [5.2, 3.2, 7],
   },
   fissure: {
@@ -115,54 +115,264 @@ const STAGE_ICONS = {
   cooling: CircleDot,
 } satisfies Record<VolcanoStage, typeof Flame>;
 
+function seafloorHeight(x: number, z: number) {
+  const ridge = 1.18 * Math.exp(-Math.abs(x) / 1.55);
+  const broadRise = 0.26 * Math.exp(-Math.abs(x) / 4.2);
+  const rockTexture =
+    Math.sin(x * 1.47 + z * 0.74) * 0.055 +
+    Math.sin(x * 3.18 - z * 1.26) * 0.025;
+  return 0.02 + ridge + broadRise + rockTexture;
+}
+
+function createPlateTopGeometry(side: "left" | "right") {
+  const xSegments = 32;
+  const zSegments = 18;
+  const xStart = side === "left" ? -10 : 0.48;
+  const xEnd = side === "left" ? -0.48 : 10;
+  const vertices: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+
+  for (let zIndex = 0; zIndex <= zSegments; zIndex += 1) {
+    const zProgress = zIndex / zSegments;
+    const z = -4 + zProgress * 8;
+    for (let xIndex = 0; xIndex <= xSegments; xIndex += 1) {
+      const xProgress = xIndex / xSegments;
+      const x = xStart + (xEnd - xStart) * xProgress;
+      vertices.push(x, seafloorHeight(x, z), z);
+      uvs.push(xProgress, zProgress);
+    }
+  }
+
+  for (let zIndex = 0; zIndex < zSegments; zIndex += 1) {
+    for (let xIndex = 0; xIndex < xSegments; xIndex += 1) {
+      const row = xSegments + 1;
+      const topLeft = zIndex * row + xIndex;
+      const topRight = topLeft + 1;
+      const bottomLeft = topLeft + row;
+      const bottomRight = bottomLeft + 1;
+      indices.push(
+        topLeft,
+        bottomLeft,
+        topRight,
+        topRight,
+        bottomLeft,
+        bottomRight,
+      );
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(vertices, 3),
+  );
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createFrontLayerGeometry(
+  side: "left" | "right",
+  bottom: number,
+  topMode: "surface" | number,
+) {
+  const segments = 44;
+  const xStart = side === "left" ? -10 : 0.48;
+  const xEnd = side === "left" ? -0.48 : 10;
+  const vertices: number[] = [];
+  const indices: number[] = [];
+
+  for (let index = 0; index <= segments; index += 1) {
+    const progress = index / segments;
+    const x = xStart + (xEnd - xStart) * progress;
+    const top = topMode === "surface" ? seafloorHeight(x, 4.04) : topMode;
+    vertices.push(x, top, 4.04, x, bottom, 4.04);
+  }
+
+  for (let index = 0; index < segments; index += 1) {
+    const currentTop = index * 2;
+    const currentBottom = currentTop + 1;
+    const nextTop = currentTop + 2;
+    const nextBottom = currentTop + 3;
+    indices.push(
+      currentTop,
+      currentBottom,
+      nextTop,
+      nextTop,
+      currentBottom,
+      nextBottom,
+    );
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(vertices, 3),
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createIrregularRockGeometry(
+  radius: number,
+  detail: number,
+  seed: number,
+) {
+  const geometry = new THREE.IcosahedronGeometry(radius, detail);
+  const position = geometry.getAttribute("position");
+  const vertex = new THREE.Vector3();
+
+  for (let index = 0; index < position.count; index += 1) {
+    vertex.fromBufferAttribute(position, index);
+    const noise =
+      1 +
+      Math.sin(vertex.x * 3.8 + seed) * 0.055 +
+      Math.sin(vertex.y * 5.1 - seed * 0.7) * 0.045 +
+      Math.sin(vertex.z * 4.3 + seed * 1.3) * 0.04;
+    vertex.multiplyScalar(noise);
+    position.setXYZ(index, vertex.x, vertex.y, vertex.z);
+  }
+
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function MantleFlowRibbons() {
+  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const curves = useMemo(
+    () => [
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-5.7, -6.6, -0.7),
+        new THREE.Vector3(-4.2, -5.8, -0.4),
+        new THREE.Vector3(-2.7, -4.65, -0.15),
+        new THREE.Vector3(-1.15, -3.45, 0),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(5.7, -6.6, 0.7),
+        new THREE.Vector3(4.1, -5.8, 0.4),
+        new THREE.Vector3(2.55, -4.65, 0.15),
+        new THREE.Vector3(1.05, -3.45, 0),
+      ]),
+    ],
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    if (!materialRef.current) return;
+    materialRef.current.emissiveIntensity =
+      0.48 + (Math.sin(clock.elapsedTime * 1.25) + 1) * 0.18;
+  });
+
+  return (
+    <group>
+      {curves.map((curve, index) => (
+        <mesh key={index}>
+          <tubeGeometry args={[curve, 42, 0.075, 7, false]} />
+          <meshStandardMaterial
+            ref={index === 0 ? materialRef : undefined}
+            color="#8e3e2b"
+            emissive="#7b1f0f"
+            emissiveIntensity={0.62}
+            transparent
+            opacity={0.55}
+            roughness={0.72}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function MantleLayer({ cutaway }: { cutaway: boolean }) {
   const glowRef = useRef<THREE.Group>(null);
+  const droplets = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, index) => {
+        const angle = index * 2.39;
+        const radius = 0.55 + (index % 7) * 0.24;
+        return {
+          position: [
+            Math.sin(angle) * radius,
+            -5.25 + (index % 6) * 0.38,
+            Math.cos(angle * 1.27) * (0.35 + (index % 4) * 0.17),
+          ] as Point3,
+          scale: 0.08 + (index % 5) * 0.018,
+        };
+      }),
+    [],
+  );
 
   useFrame(({ clock }) => {
     if (!glowRef.current) return;
-    const pulse = 1 + Math.sin(clock.elapsedTime * 1.15) * 0.045;
+    const pulse = 1 + Math.sin(clock.elapsedTime * 1.15) * 0.025;
     glowRef.current.scale.set(pulse, pulse, pulse);
   });
 
   return (
     <group>
-      <mesh position={[0, -5.6, 0]}>
-        <boxGeometry args={[20, 6, 8]} />
+      <mesh position={[0, -5.72, -0.02]}>
+        <boxGeometry args={[20, 5.9, 8]} />
         <meshStandardMaterial
-          color="#47251f"
-          roughness={0.92}
+          color="#2d1b19"
+          roughness={0.98}
           transparent
-          opacity={cutaway ? 0.95 : 0.34}
+          opacity={cutaway ? 0.97 : 0.3}
         />
       </mesh>
-      <mesh position={[0, -3.15, 0]}>
-        <boxGeometry args={[20, 0.34, 8.02]} />
+      <mesh position={[0, -3.1, 0]}>
+        <boxGeometry args={[20, 0.22, 8.03]} />
         <meshStandardMaterial
-          color="#8d3c28"
-          emissive="#5c170c"
-          emissiveIntensity={0.65}
+          color="#673025"
+          emissive="#4a150d"
+          emissiveIntensity={0.34}
           roughness={0.8}
           transparent
-          opacity={cutaway ? 0.72 : 0.2}
+          opacity={cutaway ? 0.68 : 0.16}
         />
       </mesh>
-      <group ref={glowRef}>
-        {[
-          [-2.45, -5.25, 0.8, 0.64],
-          [-1.45, -4.65, -0.3, 0.48],
-          [-0.52, -4.08, 0.6, 0.4],
-          [1.35, -4.72, 0.2, 0.46],
-          [2.25, -5.22, -0.6, 0.58],
-        ].map(([x, y, z, size], index) => (
-          <mesh key={index} position={[x, y, z]} scale={[size, size * 1.35, size]}>
-            <sphereGeometry args={[1, 20, 14]} />
+      {[-4.25, -5.55, -6.72].map((y, index) => (
+        <Line
+          key={y}
+          points={[
+            [-9.8, y + Math.sin(index) * 0.08, 4.06],
+            [-5.8, y + 0.12, 4.06],
+            [-1.9, y - 0.08, 4.06],
+            [1.9, y + 0.05, 4.06],
+            [5.8, y - 0.1, 4.06],
+            [9.8, y + 0.06, 4.06],
+          ]}
+          color={index === 0 ? "#78402f" : "#4b2b27"}
+          lineWidth={0.7}
+          transparent
+          opacity={cutaway ? 0.46 : 0.12}
+        />
+      ))}
+      <group position={[0, 0, 3.72]}>
+        <MantleFlowRibbons />
+      </group>
+      <group ref={glowRef} position={[0, 0, 3.78]}>
+        {droplets.map((droplet, index) => (
+          <mesh
+            key={index}
+            position={droplet.position}
+            scale={[
+              droplet.scale,
+              droplet.scale * 1.45,
+              droplet.scale,
+            ]}
+          >
+            <icosahedronGeometry args={[1, 1]} />
             <meshStandardMaterial
-              color="#d74e22"
-              emissive="#ff3d0a"
-              emissiveIntensity={1.8}
+              color={index % 3 === 0 ? "#ff9c3d" : "#d94c23"}
+              emissive="#ff3b0a"
+              emissiveIntensity={1.45}
               transparent
-              opacity={0.74}
-              roughness={0.48}
+              opacity={0.82}
+              roughness={0.4}
             />
           </mesh>
         ))}
@@ -171,77 +381,209 @@ function MantleLayer({ cutaway }: { cutaway: boolean }) {
   );
 }
 
-function OceanicCrust({ cutaway }: { cutaway: boolean }) {
-  const opacity = cutaway ? 1 : 0.42;
+function OceanicCrust({
+  cutaway,
+  playing,
+  speed,
+}: {
+  cutaway: boolean;
+  playing: boolean;
+  speed: number;
+}) {
+  const opacity = cutaway ? 0.9 : 0.32;
+  const leftRef = useRef<THREE.Group>(null);
+  const rightRef = useRef<THREE.Group>(null);
+  const elapsed = useRef(0);
+  const leftTop = useMemo(() => createPlateTopGeometry("left"), []);
+  const rightTop = useMemo(() => createPlateTopGeometry("right"), []);
+  const leftUpperFront = useMemo(
+    () => createFrontLayerGeometry("left", -0.72, "surface"),
+    [],
+  );
+  const rightUpperFront = useMemo(
+    () => createFrontLayerGeometry("right", -0.72, "surface"),
+    [],
+  );
+  const leftLowerFront = useMemo(
+    () => createFrontLayerGeometry("left", -2.78, -0.72),
+    [],
+  );
+  const rightLowerFront = useMemo(
+    () => createFrontLayerGeometry("right", -2.78, -0.72),
+    [],
+  );
+
+  useFrame((_, delta) => {
+    if (playing) elapsed.current += delta * speed;
+    const separation = (Math.sin(elapsed.current * 0.42) + 1) * 0.035;
+    if (leftRef.current) leftRef.current.position.x = -separation;
+    if (rightRef.current) rightRef.current.position.x = separation;
+  });
+
+  const plateMaterial = (
+    color: string,
+    layerOpacity: number,
+    flatShading = false,
+  ) => (
+    <meshStandardMaterial
+      color={color}
+      roughness={0.98}
+      metalness={0.02}
+      transparent
+      opacity={layerOpacity}
+      flatShading={flatShading}
+      side={THREE.DoubleSide}
+    />
+  );
 
   return (
     <group>
-      <mesh position={[-5.35, -1.38, 0]}>
-        <boxGeometry args={[9.4, 2.8, 8]} />
-        <meshStandardMaterial
-          color="#28323a"
-          roughness={0.96}
-          transparent
-          opacity={opacity}
-        />
-      </mesh>
-      <mesh position={[5.35, -1.38, 0]}>
-        <boxGeometry args={[9.4, 2.8, 8]} />
-        <meshStandardMaterial
-          color="#28323a"
-          roughness={0.96}
-          transparent
-          opacity={opacity}
-        />
-      </mesh>
-      <mesh position={[-2.55, 0.2, 0]} rotation={[0, 0, -0.09]}>
-        <boxGeometry args={[5.1, 0.58, 8.05]} />
-        <meshStandardMaterial color="#465058" roughness={0.94} />
-      </mesh>
-      <mesh position={[2.55, 0.2, 0]} rotation={[0, 0, 0.09]}>
-        <boxGeometry args={[5.1, 0.58, 8.05]} />
-        <meshStandardMaterial color="#465058" roughness={0.94} />
-      </mesh>
-      <mesh position={[-7.35, -0.03, 0]}>
-        <boxGeometry args={[5.4, 0.58, 8.05]} />
-        <meshStandardMaterial color="#3b464e" roughness={0.98} />
-      </mesh>
-      <mesh position={[7.35, -0.03, 0]}>
-        <boxGeometry args={[5.4, 0.58, 8.05]} />
-        <meshStandardMaterial color="#3b464e" roughness={0.98} />
-      </mesh>
-      <mesh position={[0, -0.58, 0]}>
-        <cylinderGeometry args={[0.24, 0.62, 3.75, 20]} />
-        <meshStandardMaterial
-          color="#ff4b16"
-          emissive="#ff2700"
-          emissiveIntensity={2}
-          roughness={0.42}
-        />
-      </mesh>
+      <group ref={leftRef}>
+        <mesh geometry={leftTop}>
+          {plateMaterial("#34484f", 1, true)}
+        </mesh>
+        <mesh geometry={leftUpperFront}>
+          {plateMaterial("#364147", opacity, true)}
+        </mesh>
+        <mesh geometry={leftLowerFront}>
+          {plateMaterial("#202a30", opacity * 0.58)}
+        </mesh>
+        <mesh position={[-5.24, -1.68, 0]}>
+          <boxGeometry args={[9.48, 2.15, 7.96]} />
+          {plateMaterial("#202a30", opacity * 0.58)}
+        </mesh>
+      </group>
+      <group ref={rightRef}>
+        <mesh geometry={rightTop}>
+          {plateMaterial("#34484f", 1, true)}
+        </mesh>
+        <mesh geometry={rightUpperFront}>
+          {plateMaterial("#364147", opacity, true)}
+        </mesh>
+        <mesh geometry={rightLowerFront}>
+          {plateMaterial("#202a30", opacity)}
+        </mesh>
+        <mesh position={[5.24, -1.68, 0]}>
+          <boxGeometry args={[9.48, 2.15, 7.96]} />
+          {plateMaterial("#202a30", opacity)}
+        </mesh>
+      </group>
+      {[-6.8, -4.7, -2.6, 2.6, 4.7, 6.8].map((x, index) => (
+        <mesh
+          key={x}
+          position={[x, seafloorHeight(x, 3.9) + 0.035, 3.9]}
+          rotation={[-Math.PI / 2, 0, index % 2 === 0 ? 0.18 : -0.12]}
+        >
+          <planeGeometry args={[0.75, 0.018]} />
+          <meshBasicMaterial
+            color="#63747a"
+            transparent
+            opacity={0.38}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
     </group>
   );
 }
 
-function MagmaChamber() {
-  const chamberRef = useRef<THREE.Mesh>(null);
+function MagmaConduit() {
+  const chamberRef = useRef<THREE.Group>(null);
+  const chamberGeometry = useMemo(
+    () => createIrregularRockGeometry(1, 3, 2.4),
+    [],
+  );
+  const mainConduit = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.15, -2.42, 0),
+        new THREE.Vector3(-0.14, -1.72, 0.06),
+        new THREE.Vector3(-0.2, -0.82, 0.02),
+        new THREE.Vector3(0, 0.2, 0),
+        new THREE.Vector3(0, 1.2, 0),
+      ]),
+    [],
+  );
+  const branches = useMemo(
+    () => [
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.15, -1.05, 0),
+        new THREE.Vector3(-0.65, -0.45, 0.08),
+        new THREE.Vector3(-0.9, 0.24, 0.12),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.05, -0.45, -0.04),
+        new THREE.Vector3(0.48, 0.04, -0.1),
+        new THREE.Vector3(0.7, 0.62, -0.12),
+      ]),
+    ],
+    [],
+  );
 
   useFrame(({ clock }) => {
     if (!chamberRef.current) return;
-    const pulse = 1 + Math.sin(clock.elapsedTime * 1.7) * 0.04;
-    chamberRef.current.scale.set(2.15 * pulse, 0.72 * pulse, 1.18 * pulse);
+    const pulse = 1 + Math.sin(clock.elapsedTime * 1.45) * 0.025;
+    chamberRef.current.scale.set(1.62 * pulse, 0.52 * pulse, 0.88 * pulse);
   });
 
   return (
-    <mesh ref={chamberRef} position={[0.15, -2.4, 0]}>
-      <sphereGeometry args={[1, 32, 22]} />
-      <meshStandardMaterial
-        color="#ff6a1a"
-        emissive="#ff2a00"
-        emissiveIntensity={2.4}
-        roughness={0.34}
-      />
-    </mesh>
+    <group>
+      <mesh>
+        <tubeGeometry args={[mainConduit, 52, 0.23, 10, false]} />
+        <meshStandardMaterial
+          color="#2d1713"
+          roughness={0.9}
+          transparent
+          opacity={0.86}
+        />
+      </mesh>
+      <mesh>
+        <tubeGeometry args={[mainConduit, 52, 0.135, 10, false]} />
+        <meshStandardMaterial
+          color="#ff7a25"
+          emissive="#ff2f05"
+          emissiveIntensity={2.15}
+          roughness={0.36}
+        />
+      </mesh>
+      {branches.map((curve, index) => (
+        <group key={index}>
+          <mesh>
+            <tubeGeometry args={[curve, 28, 0.078, 8, false]} />
+            <meshStandardMaterial color="#2d1713" roughness={0.9} />
+          </mesh>
+          <mesh>
+            <tubeGeometry args={[curve, 28, 0.043, 8, false]} />
+            <meshStandardMaterial
+              color="#ff6b1c"
+              emissive="#ff2e06"
+              emissiveIntensity={1.7}
+              roughness={0.4}
+            />
+          </mesh>
+        </group>
+      ))}
+      <group ref={chamberRef} position={[0.15, -2.42, 0]}>
+        <mesh geometry={chamberGeometry}>
+          <meshStandardMaterial
+            color="#d94f1d"
+            emissive="#ff2a00"
+            emissiveIntensity={1.55}
+            roughness={0.52}
+            flatShading
+          />
+        </mesh>
+        <mesh geometry={chamberGeometry} scale={1.08}>
+          <meshStandardMaterial
+            color="#351b18"
+            transparent
+            opacity={0.22}
+            roughness={0.94}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+    </group>
   );
 }
 
@@ -293,14 +635,14 @@ function MagmaParticle({
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.13 + (index % 3) * 0.022, 14, 10]} />
+      <icosahedronGeometry args={[0.075 + (index % 3) * 0.014, 1]} />
       <meshStandardMaterial
         color="#ff9b31"
         emissive="#ff3500"
-        emissiveIntensity={2.5}
+        emissiveIntensity={2.15}
         roughness={0.28}
         transparent
-        opacity={stage === "cooling" ? 0.42 : 0.94}
+        opacity={stage === "cooling" ? 0.34 : 0.9}
       />
     </mesh>
   );
@@ -317,7 +659,7 @@ function MagmaParticles({
 }) {
   return (
     <group>
-      {Array.from({ length: 16 }, (_, index) => (
+      {Array.from({ length: 24 }, (_, index) => (
         <MagmaParticle
           key={index}
           index={index}
@@ -365,6 +707,79 @@ function OceanParticles({ playing, speed }: { playing: boolean; speed: number })
   );
 }
 
+function OceanSurface({
+  playing,
+  speed,
+}: {
+  playing: boolean;
+  speed: number;
+}) {
+  const geometryRef = useRef<THREE.PlaneGeometry>(null);
+  const elapsed = useRef(0);
+
+  useFrame((_, delta) => {
+    const geometry = geometryRef.current;
+    if (!geometry) return;
+    if (playing) elapsed.current += delta * speed;
+    const position = geometry.getAttribute("position");
+    for (let index = 0; index < position.count; index += 1) {
+      const x = position.getX(index);
+      const y = position.getY(index);
+      const wave =
+        Math.sin(x * 0.55 + elapsed.current * 0.42) * 0.07 +
+        Math.sin(y * 0.72 - elapsed.current * 0.31) * 0.045;
+      position.setZ(index, wave);
+    }
+    position.needsUpdate = true;
+    geometry.computeVertexNormals();
+  });
+
+  return (
+    <mesh position={[0, 5.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry ref={geometryRef} args={[20, 8, 34, 16]} />
+      <meshPhysicalMaterial
+        color="#2c8795"
+        emissive="#123d4a"
+        emissiveIntensity={0.28}
+        transparent
+        opacity={0.3}
+        roughness={0.2}
+        metalness={0.08}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function LightShafts() {
+  return (
+    <group position={[0, 2.55, -1.5]}>
+      {[
+        [-4.8, 0.45, -0.12, 1.15],
+        [-0.8, 0.1, 0.08, 1.4],
+        [3.6, 0.35, -0.08, 1.05],
+      ].map(([x, z, tilt, scale], index) => (
+        <mesh
+          key={index}
+          position={[x, 0, z]}
+          rotation={[0, 0, tilt]}
+          scale={[scale, 1, scale]}
+        >
+          <coneGeometry args={[1.15, 6.1, 22, 1, true]} />
+          <meshBasicMaterial
+            color="#6dc9d3"
+            transparent
+            opacity={0.035}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function BubbleStream({
   index,
   playing,
@@ -384,23 +799,63 @@ function BubbleStream({
     if (playing) elapsed.current += delta * speed;
     const progress = loopingProgress(elapsed.current + index * 0.25, 3.4);
     ref.current.position.set(
-      Math.sin(index * 2.3) * 0.35 + Math.sin(progress * Math.PI * 2) * 0.08,
+      Math.sin(index * 2.3) * 0.28 + Math.sin(progress * Math.PI * 2) * 0.06,
       1.25 + progress * 3.1,
-      Math.cos(index * 1.7) * 0.34,
+      Math.cos(index * 1.7) * 0.26,
     );
-    ref.current.scale.setScalar(active ? 0.45 + progress * 0.8 : 0);
+    ref.current.scale.setScalar(active ? 0.35 + progress * 0.55 : 0);
   });
 
   return (
     <mesh ref={ref}>
-      <sphereGeometry args={[0.11 + (index % 3) * 0.025, 14, 10]} />
+      <sphereGeometry args={[0.065 + (index % 3) * 0.014, 14, 10]} />
       <meshPhysicalMaterial
         color="#b9f2f4"
         transparent
-        opacity={0.38}
+        opacity={0.3}
         roughness={0.1}
         transmission={0.2}
         depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+function EjectaSpark({
+  index,
+  playing,
+  speed,
+  active,
+}: {
+  index: number;
+  playing: boolean;
+  speed: number;
+  active: boolean;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+  const elapsed = useRef(index * 0.21);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    if (playing) elapsed.current += delta * speed;
+    const progress = loopingProgress(elapsed.current + index * 0.17, 2.7);
+    const direction = index % 2 === 0 ? -1 : 1;
+    ref.current.position.set(
+      direction * progress * (0.35 + (index % 4) * 0.1),
+      1.28 + Math.sin(progress * Math.PI) * (0.45 + (index % 3) * 0.12),
+      Math.sin(index * 1.7) * progress * 0.35,
+    );
+    const fade = Math.sin(progress * Math.PI);
+    ref.current.scale.setScalar(active ? Math.max(0.01, fade) : 0);
+  });
+
+  return (
+    <mesh ref={ref}>
+      <icosahedronGeometry args={[0.035 + (index % 3) * 0.008, 0]} />
+      <meshStandardMaterial
+        color="#ff9a3d"
+        emissive="#ff3f0b"
+        emissiveIntensity={2}
       />
     </mesh>
   );
@@ -415,10 +870,22 @@ function EruptionFlow({
   playing: boolean;
   speed: number;
 }) {
-  const ventRef = useRef<THREE.Mesh>(null);
-  const leftFlowRef = useRef<THREE.Mesh>(null);
-  const rightFlowRef = useRef<THREE.Mesh>(null);
+  const ventRef = useRef<THREE.Group>(null);
+  const leftFlowRef = useRef<THREE.Group>(null);
+  const rightFlowRef = useRef<THREE.Group>(null);
   const elapsed = useRef(0);
+  const ventGeometry = useMemo(
+    () => createIrregularRockGeometry(0.36, 2, 1.2),
+    [],
+  );
+  const leftGeometry = useMemo(
+    () => createIrregularRockGeometry(0.56, 2, 3.6),
+    [],
+  );
+  const rightGeometry = useMemo(
+    () => createIrregularRockGeometry(0.53, 2, 5.1),
+    [],
+  );
 
   useEffect(() => {
     elapsed.current = stage === "eruption" ? 0.3 : 2.1;
@@ -428,28 +895,27 @@ function EruptionFlow({
     if (playing) elapsed.current += delta * speed;
     const cycle = loopingProgress(elapsed.current, 4.8);
     const state = eruptionState(cycle);
-    const visible = stage === "eruption" || stage === "cooling";
-    const intensity = visible ? 1 : 0.08;
+    const intensity = stage === "eruption" ? 1 : stage === "cooling" ? 0.42 : 0;
 
     if (ventRef.current) {
       ventRef.current.scale.set(
-        0.5 + state.ventRise * 0.5,
+        (0.5 + state.ventRise * 0.5) * intensity,
         (0.3 + state.ventRise * 0.9) * intensity,
-        0.5 + state.ventRise * 0.5,
+        (0.5 + state.ventRise * 0.5) * intensity,
       );
     }
     if (leftFlowRef.current) {
       leftFlowRef.current.scale.set(
-        Math.max(0.05, state.lateralFlow * 1.65 * intensity),
-        0.52,
-        0.72,
+        Math.max(0, state.lateralFlow * 1.65 * intensity),
+        0.48 * intensity,
+        0.72 * intensity,
       );
     }
     if (rightFlowRef.current) {
       rightFlowRef.current.scale.set(
-        Math.max(0.05, state.lateralFlow * 1.3 * intensity),
-        0.46,
-        0.66,
+        Math.max(0, state.lateralFlow * 1.3 * intensity),
+        0.46 * intensity,
+        0.66 * intensity,
       );
     }
   });
@@ -458,48 +924,95 @@ function EruptionFlow({
 
   return (
     <group>
-      <mesh ref={ventRef} position={[0, 1.32, 0]}>
-        <sphereGeometry args={[0.48, 24, 16]} />
+      <mesh position={[0, 1.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.43, 0.12, 12, 28]} />
         <meshStandardMaterial
-          color="#ff8b22"
-          emissive="#ff2600"
-          emissiveIntensity={2.8}
-          roughness={0.32}
+          color="#1d2426"
+          roughness={0.96}
+          flatShading
         />
       </mesh>
-      <mesh
+      <group ref={ventRef} position={[0, 1.32, 0]}>
+        <mesh geometry={ventGeometry}>
+          <meshStandardMaterial
+            color="#d95a20"
+            emissive="#ff2600"
+            emissiveIntensity={1.9}
+            roughness={0.48}
+            flatShading
+          />
+        </mesh>
+        <mesh geometry={ventGeometry} scale={0.72}>
+          <meshStandardMaterial
+            color="#ffd16d"
+            emissive="#ff4c10"
+            emissiveIntensity={2.6}
+            roughness={0.3}
+          />
+        </mesh>
+      </group>
+      <group
         ref={leftFlowRef}
         position={[-0.66, 1.24, 0.04]}
         rotation={[0.08, 0.06, -0.18]}
       >
-        <sphereGeometry args={[0.72, 24, 16]} />
-        <meshStandardMaterial
-          color="#ff6d18"
-          emissive="#ff2200"
-          emissiveIntensity={2.45}
-          roughness={0.38}
-        />
-      </mesh>
-      <mesh
+        <mesh geometry={leftGeometry}>
+          <meshStandardMaterial
+            color="#4a2e29"
+            emissive="#c52c0d"
+            emissiveIntensity={0.72}
+            roughness={0.84}
+            flatShading
+          />
+        </mesh>
+        <mesh geometry={leftGeometry} scale={0.64} position={[-0.2, 0.02, 0]}>
+          <meshStandardMaterial
+            color="#ff7c27"
+            emissive="#ff2d06"
+            emissiveIntensity={2.15}
+            roughness={0.4}
+          />
+        </mesh>
+      </group>
+      <group
         ref={rightFlowRef}
         position={[0.62, 1.25, -0.05]}
         rotation={[-0.05, -0.08, 0.16]}
       >
-        <sphereGeometry args={[0.68, 24, 16]} />
-        <meshStandardMaterial
-          color="#ff711c"
-          emissive="#ff2200"
-          emissiveIntensity={2.45}
-          roughness={0.38}
-        />
-      </mesh>
-      {Array.from({ length: 10 }, (_, index) => (
+        <mesh geometry={rightGeometry}>
+          <meshStandardMaterial
+            color="#4a2e29"
+            emissive="#bf2a0d"
+            emissiveIntensity={0.68}
+            roughness={0.84}
+            flatShading
+          />
+        </mesh>
+        <mesh geometry={rightGeometry} scale={0.62} position={[0.18, 0.02, 0]}>
+          <meshStandardMaterial
+            color="#ff7925"
+            emissive="#ff2b05"
+            emissiveIntensity={2.1}
+            roughness={0.4}
+          />
+        </mesh>
+      </group>
+      {Array.from({ length: 8 }, (_, index) => (
         <BubbleStream
           key={index}
           index={index}
           playing={playing}
           speed={speed}
           active={active}
+        />
+      ))}
+      {Array.from({ length: 14 }, (_, index) => (
+        <EjectaSpark
+          key={`spark-${index}`}
+          index={index}
+          playing={playing}
+          speed={speed}
+          active={stage === "eruption"}
         />
       ))}
     </group>
@@ -529,13 +1042,18 @@ function PillowLava({
   playing: boolean;
   speed: number;
 }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const seamMaterialRef = useRef<THREE.MeshStandardMaterial>(null);
   const elapsed = useRef(index * 0.29);
   const hotColor = useMemo(() => new THREE.Color("#ff6a18"), []);
   const coolColor = useMemo(() => new THREE.Color("#31373b"), []);
   const hotEmissive = useMemo(() => new THREE.Color("#ff2600"), []);
   const darkEmissive = useMemo(() => new THREE.Color("#120503"), []);
+  const geometry = useMemo(
+    () => createIrregularRockGeometry(1, 2, 7.2 + index * 1.13),
+    [index],
+  );
   const [x, y, z, size] = PILLOW_POSITIONS[index];
 
   useEffect(() => {
@@ -545,41 +1063,74 @@ function PillowLava({
   useFrame((_, delta) => {
     const mesh = meshRef.current;
     const material = materialRef.current;
-    if (!mesh || !material) return;
+    const seamMaterial = seamMaterialRef.current;
+    if (!mesh || !material || !seamMaterial) return;
     if (playing) elapsed.current += delta * speed;
 
     const stageActive = stage === "cooling";
-    const stagger = Math.max(0, elapsed.current - index * 0.24);
-    const progress = stageActive ? Math.min(1, stagger / 3.6) : 1;
+    const isActiveLobe = index === 4;
+    const progress =
+      stageActive && isActiveLobe
+        ? loopingProgress(elapsed.current, 5.4)
+        : 1;
     const state = pillowFormationState(progress);
     const baseVisibility =
       stage === "melting" || stage === "rising"
-        ? 0.28
+        ? 0.14
         : stage === "eruption"
           ? 0.62
           : 1;
-    const growth = stageActive
+    const growth = stageActive && isActiveLobe
       ? Math.max(0.08, Math.min(1, state.shellProgress + state.nextLobeProgress * 0.25))
-      : baseVisibility;
+      : stageActive
+        ? 1
+        : baseVisibility;
+    const heatAmount =
+      stageActive && isActiveLobe ? Math.pow(state.coreHeat, 2.2) : 0.015;
 
     mesh.scale.set(size * 1.22 * growth, size * 0.72 * growth, size * growth);
-    material.color.copy(coolColor).lerp(hotColor, state.coreHeat * (stageActive ? 0.9 : 0.1));
+    material.color.copy(coolColor).lerp(hotColor, heatAmount);
     material.emissive
       .copy(darkEmissive)
-      .lerp(hotEmissive, state.coreHeat * (stageActive ? 0.72 : 0.04));
-    material.emissiveIntensity = stageActive ? 1.45 * state.coreHeat : 0.08;
+      .lerp(hotEmissive, heatAmount * 0.72);
+    material.emissiveIntensity =
+      stageActive && isActiveLobe ? 1.25 * heatAmount : 0.04;
+    seamMaterial.opacity =
+      stageActive && isActiveLobe
+        ? Math.max(0.03, heatAmount * (1 - state.shellProgress * 0.7))
+        : 0.025;
+    seamMaterial.emissiveIntensity =
+      stageActive && isActiveLobe ? 1.8 * heatAmount : 0.06;
   });
 
   return (
-    <mesh ref={meshRef} position={[x, y, z]}>
-      <sphereGeometry args={[1, 24, 16]} />
-      <meshStandardMaterial
-        ref={materialRef}
-        color="#343b3e"
-        emissive="#120503"
-        roughness={0.88}
-      />
-    </mesh>
+    <group ref={meshRef} position={[x, y, z]}>
+      <mesh geometry={geometry}>
+        <meshStandardMaterial
+          ref={materialRef}
+          color="#343b3e"
+          emissive="#120503"
+          roughness={0.94}
+          flatShading
+        />
+      </mesh>
+      <mesh
+        position={[index < 4 ? -0.72 : 0.72, 0.02, 0.02]}
+        rotation={[0, index < 4 ? -0.22 : 0.22, Math.PI / 2]}
+        scale={[0.6, 0.78, 0.6]}
+      >
+        <torusGeometry args={[0.42, 0.045, 8, 22]} />
+        <meshStandardMaterial
+          ref={seamMaterialRef}
+          color="#ff8a2b"
+          emissive="#ff3608"
+          emissiveIntensity={1.5}
+          transparent
+          opacity={0.12}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -613,28 +1164,28 @@ function TeachingArrows({ stage }: { stage: VolcanoStage }) {
 
   return (
     <group>
-      <arrowHelper
-        args={[
-          new THREE.Vector3(-1, 0, 0),
-          new THREE.Vector3(-0.9, 0.92, 1.3),
-          3.2,
-          plateColor,
-          0.48,
-          0.28,
-        ]}
-      />
-      <arrowHelper
-        args={[
-          new THREE.Vector3(1, 0, 0),
-          new THREE.Vector3(0.9, 0.92, 1.3),
-          3.2,
-          plateColor,
-          0.48,
-          0.28,
-        ]}
-      />
       {(stage === "melting" || stage === "rising") && (
         <>
+          <arrowHelper
+            args={[
+              new THREE.Vector3(-1, 0, 0),
+              new THREE.Vector3(-0.9, 0.92, 1.3),
+              3.2,
+              plateColor,
+              0.48,
+              0.28,
+            ]}
+          />
+          <arrowHelper
+            args={[
+              new THREE.Vector3(1, 0, 0),
+              new THREE.Vector3(0.9, 0.92, 1.3),
+              3.2,
+              plateColor,
+              0.48,
+              0.28,
+            ]}
+          />
           <arrowHelper
             args={[
               new THREE.Vector3(0, 1, 0),
@@ -670,15 +1221,33 @@ function SceneLabels({
 }) {
   return (
     <>
-      <Html center position={[0, -6.25, 0]}>
-        <span className={styles.sceneLabel}>软流圈 · 高温但大部分仍是固体</span>
-      </Html>
-      <Html center position={[-5.8, -0.2, 0]}>
-        <span className={styles.sceneLabel}>向左移动的洋壳</span>
-      </Html>
-      <Html center position={[5.8, -0.2, 0]}>
-        <span className={styles.sceneLabel}>向右移动的洋壳</span>
-      </Html>
+      {stage === "melting" && (
+        <>
+          <Html center position={[0, -5.75, 0.8]}>
+            <span className={styles.sceneLabel}>
+              地幔上涌 · 压力逐渐降低
+            </span>
+          </Html>
+          <Html center position={[-4.25, 0.92, 0.8]}>
+            <span className={styles.sceneLabel}>洋壳缓慢分开</span>
+          </Html>
+        </>
+      )}
+      {stage === "rising" && (
+        <>
+          <Html center position={[1.55, -2.35, 0.7]}>
+            <span className={styles.sceneLabel}>岩浆储集区</span>
+          </Html>
+          <Html center position={[1.2, -0.15, 0.7]}>
+            <span className={styles.sceneLabel}>岩层裂隙</span>
+          </Html>
+        </>
+      )}
+      {stage === "cooling" && (
+        <Html center position={[2.45, 1.75, 0.7]}>
+          <span className={styles.sceneLabel}>枕状玄武岩逐层堆积</span>
+        </Html>
+      )}
       <Html center position={[0, stage === "melting" ? -3.55 : 2.2, 0]}>
         <span className={styles.sceneCaption}>
           {STAGE_DEFINITIONS[stage].sceneLabel}
@@ -721,11 +1290,11 @@ function HotspotMarkers({
             }}
             scale={isSelected ? 1.25 : 1}
           >
-            <sphereGeometry args={[0.2, 18, 12]} />
+            <sphereGeometry args={[0.08, 18, 12]} />
             <meshBasicMaterial
               color={isSelected ? "#f7d163" : "#9de8e1"}
               transparent
-              opacity={isSelected ? 1 : 0.76}
+              opacity={isSelected ? 0.95 : 0.58}
               depthTest={false}
             />
           </mesh>
@@ -752,44 +1321,54 @@ function VolcanoScene({
 }) {
   return (
     <>
-      <ambientLight intensity={0.62} />
-      <hemisphereLight args={["#6bb4c6", "#32170f", 1.25]} />
+      <ambientLight intensity={0.7} />
+      <hemisphereLight args={["#75c9d7", "#35201b", 1.35]} />
       <pointLight
-        position={[0, -1.8, 2.5]}
+        position={[0, -1.55, 5.2]}
         color="#ff5a19"
-        intensity={76}
-        distance={12}
+        intensity={26}
+        distance={9}
         decay={1.8}
       />
-      <directionalLight position={[2, 7, 8]} color="#8ad8e4" intensity={1.15} />
+      <pointLight
+        position={[0, 1.45, 0.5]}
+        color="#ff8d3c"
+        intensity={18}
+        distance={5.5}
+        decay={2}
+      />
+      <directionalLight position={[2, 7, 9]} color="#91dbe4" intensity={1.55} />
+      <directionalLight
+        position={[-6, 3, -5]}
+        color="#285d70"
+        intensity={0.7}
+      />
 
       <mesh position={[0, 3.25, 0]}>
         <boxGeometry args={[20, 5, 8]} />
         <meshPhysicalMaterial
-          color="#0d5267"
+          color="#0c4558"
           transparent
-          opacity={0.13}
+          opacity={0.1}
           roughness={0.12}
           transmission={0.08}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
-      <mesh position={[0, 5.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[20, 8, 24, 12]} />
-        <meshStandardMaterial
-          color="#1e7787"
-          transparent
-          opacity={0.2}
-          roughness={0.32}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <OceanSurface playing={playing} speed={speed} />
+      <LightShafts />
 
       <MantleLayer cutaway={overlays.cutaway} />
-      <OceanicCrust cutaway={overlays.cutaway} />
-      <MagmaChamber />
-      <MagmaParticles stage={stage} playing={playing} speed={speed} />
+      <OceanicCrust
+        cutaway={overlays.cutaway}
+        playing={playing}
+        speed={speed}
+      />
+      <group position={[0, 0, 4.12]}>
+        <MagmaConduit />
+        <MagmaParticles stage={stage} playing={playing} speed={speed} />
+      </group>
       <EruptionFlow stage={stage} playing={playing} speed={speed} />
       <PillowField stage={stage} playing={playing} speed={speed} />
       {overlays.particles && (
@@ -803,14 +1382,16 @@ function VolcanoScene({
 
       <Line
         points={[
-          [-0.42, 1.02, 2.2],
-          [0, 1.28, 2.2],
-          [0.42, 1.02, 2.2],
+          [-0.5, 1.16, 3.76],
+          [-0.28, 1.34, 3.82],
+          [-0.08, 1.25, 3.86],
+          [0.12, 1.38, 3.84],
+          [0.34, 1.18, 3.78],
         ]}
-        color="#ffb052"
-        lineWidth={1.3}
+        color="#ff8a36"
+        lineWidth={1.8}
         transparent
-        opacity={0.75}
+        opacity={0.9}
       />
     </>
   );
@@ -920,11 +1501,16 @@ function VolcanoCanvas({
         alpha: false,
         powerPreference: "high-performance",
       }}
-      onCreated={({ gl }) => gl.setClearColor("#06141c")}
+      onCreated={({ gl, camera }) => {
+        gl.setClearColor("#06141c");
+        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        gl.toneMappingExposure = 1.22;
+        camera.lookAt(new THREE.Vector3(...definition.cameraTarget));
+      }}
       onPointerMissed={() => undefined}
       aria-label="可以拖动和缩放的三维海底火山剖面"
     >
-      <fog attach="fog" args={["#06141c", 18, 48]} />
+      <fog attach="fog" args={["#06141c", 15, 38]} />
       <VolcanoScene
         stage={stage}
         selectedHotspot={selectedHotspot}
@@ -939,11 +1525,12 @@ function VolcanoCanvas({
         enableDamping
         dampingFactor={0.075}
         minDistance={5}
-        maxDistance={34}
+        maxDistance={26}
         minPolarAngle={0.24}
         maxPolarAngle={Math.PI / 2.05}
         minAzimuthAngle={-Math.PI * 0.48}
         maxAzimuthAngle={Math.PI * 0.48}
+        target={[...definition.cameraTarget]}
       />
       <CameraRig
         controlsRef={controlsRef}
