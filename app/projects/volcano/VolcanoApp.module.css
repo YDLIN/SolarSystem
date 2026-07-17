@@ -1,0 +1,970 @@
+.volcanoApp {
+  --ocean: #06141c;
+  --ocean-panel: rgba(8, 25, 34, 0.88);
+  --ocean-panel-strong: rgba(9, 29, 39, 0.96);
+  --ocean-ink: #f2f4ee;
+  --ocean-muted: #aabfc2;
+  --ocean-line: rgba(184, 232, 233, 0.2);
+  --ocean-line-strong: rgba(184, 232, 233, 0.36);
+  --magma: #ff8b2b;
+  --magma-bright: #ffd36b;
+  --aqua: #74ded8;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  min-height: 600px;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--ocean-ink);
+  background:
+    radial-gradient(circle at 50% 15%, rgba(38, 113, 131, 0.23), transparent 38%),
+    var(--ocean);
+}
+
+.volcanoApp button,
+.volcanoApp input {
+  font: inherit;
+}
+
+.volcanoApp button:focus-visible,
+.volcanoApp input:focus-visible,
+.volcanoApp a:focus-visible {
+  outline: 2px solid var(--aqua);
+  outline-offset: 2px;
+}
+
+.canvasShell {
+  position: absolute;
+  inset: 0;
+  background: var(--ocean);
+}
+
+.canvasShell::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(24, 88, 104, 0.12), transparent 35%),
+    radial-gradient(circle at 50% 42%, transparent 35%, rgba(1, 8, 12, 0.42) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.canvasShell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.appHeader {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 22px;
+  pointer-events: none;
+}
+
+.headerIdentity,
+.backToGallery,
+.brandLockup,
+.playbackControls,
+.lessonStrip,
+.factCard,
+.settingsPanel,
+.hotspotDock,
+.bottomControls {
+  pointer-events: auto;
+}
+
+.headerIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.backToGallery {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--ocean-line);
+  border-radius: 7px;
+  color: var(--ocean-muted);
+  background: var(--ocean-panel);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  backdrop-filter: blur(16px);
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.backToGallery:hover {
+  border-color: var(--ocean-line-strong);
+  color: var(--ocean-ink);
+  background: var(--ocean-panel-strong);
+}
+
+.backToGallery svg {
+  width: 16px;
+  height: 16px;
+}
+
+.brandLockup {
+  display: flex;
+  min-width: 225px;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandMark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 222, 130, 0.5);
+  border-radius: 50%;
+  color: #25130a;
+  background:
+    radial-gradient(circle at 48% 30%, #ffd875, #ff8124 66%, #dc3d12);
+  box-shadow:
+    0 0 0 4px rgba(255, 139, 43, 0.09),
+    0 0 26px rgba(255, 104, 25, 0.35);
+}
+
+.brandMark svg {
+  width: 21px;
+  height: 21px;
+}
+
+.brandLockup h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.08;
+}
+
+.brandLockup p {
+  margin: 4px 0 0;
+  color: var(--ocean-muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.playbackControls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+  border: 1px solid var(--ocean-line);
+  border-radius: 8px;
+  background: var(--ocean-panel);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.iconButton {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ocean-ink);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.iconButton:hover,
+.iconButton.active {
+  border-color: var(--ocean-line);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.iconButton.primaryAction {
+  color: #24140b;
+  background: var(--magma);
+}
+
+.iconButton.primaryAction:hover {
+  border-color: var(--magma-bright);
+  background: #ffa53b;
+}
+
+.iconButton svg,
+.settingsHeading button svg,
+.factCard button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.volcanoApp [data-tooltip]::after {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  left: 50%;
+  width: max-content;
+  max-width: 140px;
+  padding: 5px 7px;
+  transform: translateX(-50%) translateY(-2px);
+  border: 1px solid var(--ocean-line);
+  border-radius: 5px;
+  color: var(--ocean-ink);
+  background: var(--ocean-panel-strong);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.volcanoApp [data-tooltip]:hover::after,
+.volcanoApp [data-tooltip]:focus-visible::after {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.speedControl {
+  display: grid;
+  width: 116px;
+  grid-template-columns: repeat(3, minmax(34px, 1fr));
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--ocean-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.speedControl button {
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--ocean-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.speedControl button:hover {
+  color: var(--ocean-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.speedControl button.active {
+  color: #10201f;
+  background: var(--aqua);
+}
+
+.lessonStrip {
+  position: absolute;
+  z-index: 12;
+  top: 82px;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  max-width: min(680px, calc(100% - 48px));
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 11px 7px 7px;
+  transform: translateX(-50%);
+  border: 1px solid var(--ocean-line);
+  border-radius: 8px;
+  background: var(--ocean-panel);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.23);
+  backdrop-filter: blur(16px);
+}
+
+.lessonKicker {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 5px;
+  color: #28160a;
+  background: var(--magma);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.lessonStrip p {
+  margin: 0;
+  color: var(--ocean-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.factCard {
+  position: absolute;
+  z-index: 14;
+  top: 92px;
+  left: 22px;
+  display: grid;
+  width: min(510px, calc(100% - 44px));
+  grid-template-columns: auto minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 14px;
+  border: 1px solid rgba(116, 222, 216, 0.42);
+  border-radius: 8px;
+  background: var(--ocean-panel-strong);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.factCard > div {
+  min-width: 92px;
+}
+
+.factCard > div span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--aqua);
+  font-size: 10px;
+}
+
+.factCard strong {
+  font-size: 17px;
+}
+
+.factCard p {
+  margin: 0;
+  color: #d8e1dd;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.factCard button,
+.settingsHeading button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: var(--ocean-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.factCard button:hover,
+.settingsHeading button:hover {
+  color: var(--ocean-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settingsPanel {
+  position: absolute;
+  z-index: 24;
+  top: 82px;
+  right: 22px;
+  width: 232px;
+  padding: 12px;
+  border: 1px solid var(--ocean-line-strong);
+  border-radius: 8px;
+  background: var(--ocean-panel-strong);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px);
+}
+
+.settingsHeading {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding-left: 4px;
+  font-size: 14px;
+}
+
+.settingsHeading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.settingsHeading > div span {
+  color: var(--magma-bright);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.switchRow {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  border-top: 1px solid var(--ocean-line);
+  color: #dce5e1;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.switchControl {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 38px;
+}
+
+.switchControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switchTrack {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--ocean-line-strong);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.switchTrack::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #cbd9d6;
+  content: "";
+  transition:
+    transform 150ms ease,
+    background 150ms ease;
+}
+
+.switchControl input:checked + .switchTrack {
+  border-color: var(--aqua);
+  background: rgba(116, 222, 216, 0.24);
+}
+
+.switchControl input:checked + .switchTrack::after {
+  transform: translateX(16px);
+  background: var(--aqua);
+}
+
+.switchControl input:focus-visible + .switchTrack {
+  outline: 2px solid var(--aqua);
+  outline-offset: 2px;
+}
+
+.hotspotDock {
+  position: absolute;
+  z-index: 11;
+  top: 50%;
+  left: 22px;
+  width: 148px;
+  padding: 9px;
+  transform: translateY(-44%);
+  border: 1px solid var(--ocean-line);
+  border-radius: 8px;
+  background: rgba(7, 23, 31, 0.76);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(14px);
+}
+
+.hotspotDock > span {
+  display: block;
+  padding: 2px 5px 7px;
+  color: var(--ocean-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.hotspotDock > div {
+  display: grid;
+  gap: 3px;
+}
+
+.hotspotDock button {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #cddad7;
+  background: transparent;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hotspotDock button > span {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border: 1px solid var(--aqua);
+  border-radius: 50%;
+  background: rgba(116, 222, 216, 0.14);
+}
+
+.hotspotDock button:hover {
+  color: var(--ocean-ink);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.hotspotDock button.active {
+  border-color: rgba(116, 222, 216, 0.34);
+  color: #10201f;
+  background: var(--aqua);
+}
+
+.hotspotDock button.active > span {
+  border-color: #10201f;
+  background: #10201f;
+}
+
+.bottomControls {
+  position: absolute;
+  z-index: 16;
+  right: 0;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  pointer-events: none;
+}
+
+.scienceNote,
+.scaleNote {
+  width: max-content;
+  max-width: calc(100% - 18px);
+  margin: 0;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 165, 59, 0.3);
+  border-radius: 5px;
+  color: #f4e4c2;
+  background: rgba(4, 14, 20, 0.8);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.scaleNote {
+  border-color: var(--ocean-line);
+  color: var(--ocean-muted);
+}
+
+.stageBar {
+  display: grid;
+  width: min(760px, 100%);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid var(--ocean-line);
+  border-radius: 8px;
+  background: var(--ocean-panel);
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+}
+
+.stageBar button {
+  display: flex;
+  min-width: 0;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ocean-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.stageBar button:hover {
+  color: var(--ocean-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stageBar button.active {
+  border-color: var(--magma-bright);
+  color: #25150b;
+  background: var(--magma);
+}
+
+.stageBar svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.shortLabel {
+  display: none;
+}
+
+.sceneLabel,
+.sceneCaption,
+.selectedPin {
+  display: block;
+  width: max-content;
+  max-width: 280px;
+  color: var(--ocean-ink);
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  line-height: 1.25;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.sceneLabel {
+  padding: 5px 7px;
+  border: 1px solid rgba(184, 232, 233, 0.22);
+  border-radius: 5px;
+  background: rgba(4, 16, 22, 0.76);
+  font-size: 11px;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.26);
+}
+
+.sceneCaption {
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 180, 80, 0.42);
+  border-radius: 5px;
+  color: #fff0c0;
+  background: rgba(8, 18, 22, 0.82);
+  font-size: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.selectedPin {
+  margin-top: -34px;
+  padding: 5px 7px;
+  border-radius: 5px;
+  color: #1d1609;
+  background: var(--magma-bright);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.watermark {
+  position: absolute;
+  z-index: 7;
+  right: 22px;
+  bottom: 160px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(207, 233, 232, 0.55);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+.watermark svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 900px) {
+  .hotspotDock {
+    top: auto;
+    bottom: 155px;
+    left: 50%;
+    width: min(610px, calc(100% - 28px));
+    padding: 6px;
+    transform: translateX(-50%);
+  }
+
+  .hotspotDock > span {
+    display: none;
+  }
+
+  .hotspotDock > div {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .hotspotDock button {
+    justify-content: center;
+    gap: 5px;
+    padding: 0 4px;
+    text-align: center;
+  }
+
+  .watermark {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .volcanoApp {
+    min-height: 660px;
+  }
+
+  .appHeader {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .headerIdentity {
+    justify-content: space-between;
+  }
+
+  .brandLockup {
+    min-width: 0;
+  }
+
+  .brandMark {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .brandLockup h1 {
+    font-size: 18px;
+  }
+
+  .brandLockup p {
+    display: none;
+  }
+
+  .playbackControls {
+    width: 100%;
+    justify-content: space-between;
+    padding: 5px;
+  }
+
+  .iconButton {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .speedControl {
+    width: 130px;
+    grid-template-columns: repeat(3, minmax(30px, 1fr));
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+
+  .lessonStrip {
+    top: 112px;
+    width: calc(100% - 24px);
+    max-width: none;
+    align-items: flex-start;
+  }
+
+  .lessonStrip p {
+    font-size: 12px;
+  }
+
+  .factCard {
+    top: 112px;
+    left: 12px;
+    width: calc(100% - 24px);
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .factCard p {
+    font-size: 12px;
+  }
+
+  .settingsPanel {
+    top: 112px;
+    right: 12px;
+  }
+
+  .hotspotDock {
+    bottom: 150px;
+    width: calc(100% - 16px);
+  }
+
+  .hotspotDock button {
+    min-height: 36px;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 9px;
+    line-height: 1.1;
+  }
+
+  .hotspotDock button > span {
+    width: 6px;
+    height: 6px;
+    flex-basis: 6px;
+  }
+
+  .bottomControls {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 4px;
+    padding: 0 8px;
+  }
+
+  .scienceNote {
+    overflow: hidden;
+    max-width: calc(100% - 10px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .stageBar {
+    gap: 3px;
+    padding: 5px;
+  }
+
+  .stageBar button {
+    height: 52px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 3px;
+    font-size: 10px;
+  }
+
+  .longLabel {
+    display: none;
+  }
+
+  .shortLabel {
+    display: inline;
+  }
+
+  .sceneLabel,
+  .sceneCaption,
+  .selectedPin {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .backToGallery span {
+    display: none;
+  }
+
+  .brandLockup {
+    gap: 7px;
+  }
+
+  .speedControl {
+    width: 112px;
+  }
+
+  .lessonStrip {
+    gap: 7px;
+  }
+
+  .lessonKicker {
+    padding-inline: 7px;
+  }
+}
+
+@media (max-height: 650px) and (orientation: landscape) {
+  .volcanoApp {
+    min-height: 340px;
+  }
+
+  .appHeader {
+    padding: 10px 14px;
+  }
+
+  .lessonStrip,
+  .factCard {
+    top: 64px;
+  }
+
+  .hotspotDock {
+    top: 50%;
+    bottom: auto;
+    left: 14px;
+    width: 136px;
+    padding: 6px;
+    transform: translateY(-34%);
+  }
+
+  .hotspotDock > span {
+    display: block;
+  }
+
+  .hotspotDock > div {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .hotspotDock button {
+    min-height: 26px;
+    flex-direction: row;
+    justify-content: flex-start;
+    font-size: 9px;
+  }
+
+  .bottomControls {
+    bottom: 6px;
+    gap: 3px;
+  }
+
+  .stageBar {
+    padding: 5px;
+  }
+
+  .stageBar button {
+    height: 38px;
+  }
+
+  .scienceNote,
+  .scaleNote {
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .volcanoApp *,
+  .volcanoApp *::before,
+  .volcanoApp *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

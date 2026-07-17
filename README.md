@@ -5,7 +5,7 @@
 ## 当前内容
 
 - 小小太阳系：3D 展示太阳、八大行星和月球，支持公转、自转、昼夜、日食和月食互动演示。
-- 火山的形成：即将上线。
+- 火山的形成：3D 展示洋中脊张裂、地幔减压熔融、岩浆上升、海底喷发和枕状熔岩形成。
 - 水循环：即将上线。
 - 台风的形成：即将上线。
 
@@ -56,10 +56,16 @@ app/
       LightStream.tsx              # 光照可视化
       eclipseGeometry.ts           # 日食、月食几何计算
       planetOrbit.ts               # 行星轨道计算
+    volcano/
+      page.tsx                     # 火山子项目路由与分享元数据
+      VolcanoApp.tsx               # 海底火山 3D 互动应用
+      VolcanoApp.module.css        # 火山展厅局部样式
+      volcanoModel.ts              # 阶段定义与动画计算
 public/
   favicon.svg                      # 网站图标
   og.png                           # 小小科学馆分享图
   solar-system-og.png              # 小小太阳系分享图
+  volcano-og.png                   # 火山的形成分享图
 tests/
   *.test.mjs                       # 路由渲染、轨道和食相测试
 ```

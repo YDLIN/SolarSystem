@@ -36,11 +36,12 @@ test("server-renders the science museum project gallery", async () => {
   }
 
   assert.match(html, /href="\/projects\/solar-system"/);
-  assert.equal((html.match(/data-status="available"/g) ?? []).length, 1);
-  assert.equal((html.match(/data-status="coming-soon"/g) ?? []).length, 3);
+  assert.match(html, /href="\/projects\/volcano"/);
+  assert.equal((html.match(/data-status="available"/g) ?? []).length, 2);
+  assert.equal((html.match(/data-status="coming-soon"/g) ?? []).length, 2);
   assert.doesNotMatch(
     html,
-    /href="\/projects\/(?:volcano|water-cycle|typhoon)"/,
+    /href="\/projects\/(?:water-cycle|typhoon)"/,
   );
 });
 
@@ -63,6 +64,21 @@ test("server-renders the solar system at its project route", async () => {
     html,
     /轨道形状与倾角参考真实数据；大小、距离和速度经过教学调整/,
   );
+});
+
+test("server-renders the volcano at its project route", async () => {
+  const response = await render("/projects/volcano");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>火山的形成｜小小科学馆<\/title>/i);
+  assert.match(html, /data-testid="volcano-app"/);
+  assert.match(html, /href="\/"/);
+  assert.match(html, /返回小小科学馆/);
+  for (const stage of ["melting", "rising", "eruption", "cooling"]) {
+    assert.match(html, new RegExp(`data-stage="${stage}"`));
+  }
+  assert.match(html, /地幔岩石发生了部分熔融/);
 });
 
 test("keeps the solar-system feature files together", async () => {

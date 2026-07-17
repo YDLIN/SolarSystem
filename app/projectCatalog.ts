@@ -42,9 +42,10 @@ export const SCIENCE_PROJECTS = [
     title: "火山的形成",
     category: "地质",
     index: "02",
-    description: "地底的能量，如何一步步冲破岩层，奔向天空。",
+    description: "潜入深海，看岩浆如何形成、上升，并在海底创造新的岩石。",
     visual: "volcano",
-    status: "coming-soon",
+    status: "available",
+    href: "/projects/volcano",
   },
   {
     slug: "water-cycle",
