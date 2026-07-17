@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import LightStream from "./LightStream";
 
 export type Mode =
   | "solar-system"
@@ -278,7 +279,171 @@ function seededRandom(seedText: string) {
   };
 }
 
-function createBodyTexture(body: CelestialBody) {
+type BodyTextures = {
+  map: THREE.CanvasTexture;
+  bumpMap?: THREE.CanvasTexture;
+  emissiveMap?: THREE.CanvasTexture;
+  cloudMap?: THREE.CanvasTexture;
+};
+
+const EARTH_CONTINENTS: Array<Array<[number, number]>> = [
+  [[0.06, 0.21], [0.12, 0.13], [0.21, 0.11], [0.27, 0.18], [0.25, 0.29], [0.2, 0.35], [0.18, 0.47], [0.12, 0.44], [0.09, 0.34]],
+  [[0.21, 0.49], [0.27, 0.52], [0.3, 0.62], [0.28, 0.75], [0.23, 0.88], [0.2, 0.76], [0.18, 0.62]],
+  [[0.43, 0.2], [0.52, 0.13], [0.65, 0.15], [0.72, 0.22], [0.83, 0.2], [0.92, 0.3], [0.87, 0.39], [0.75, 0.36], [0.67, 0.45], [0.57, 0.4], [0.5, 0.31], [0.43, 0.3]],
+  [[0.48, 0.4], [0.57, 0.38], [0.63, 0.47], [0.61, 0.66], [0.55, 0.79], [0.49, 0.69], [0.45, 0.52]],
+  [[0.82, 0.59], [0.9, 0.57], [0.95, 0.65], [0.92, 0.75], [0.84, 0.77], [0.79, 0.68]],
+  [[0.31, 0.08], [0.36, 0.05], [0.4, 0.1], [0.37, 0.18], [0.31, 0.16]],
+  [[0, 0.91], [0.16, 0.88], [0.34, 0.92], [0.52, 0.89], [0.7, 0.92], [0.87, 0.88], [1, 0.91], [1, 1], [0, 1]],
+];
+
+function drawEarthContinents(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  fillStyle: string | CanvasGradient,
+) {
+  context.fillStyle = fillStyle;
+  context.strokeStyle = "rgba(220, 236, 189, 0.42)";
+  context.lineWidth = Math.max(1, width / 900);
+  EARTH_CONTINENTS.forEach((continent) => {
+    context.beginPath();
+    continent.forEach(([x, y], index) => {
+      if (index === 0) context.moveTo(x * width, y * height);
+      else context.lineTo(x * width, y * height);
+    });
+    context.closePath();
+    context.fill();
+    context.stroke();
+  });
+}
+
+function createEarthTextures(): BodyTextures | null {
+  const width = 1024;
+  const height = 512;
+  const surface = document.createElement("canvas");
+  const elevation = document.createElement("canvas");
+  const night = document.createElement("canvas");
+  const clouds = document.createElement("canvas");
+  surface.width = elevation.width = night.width = clouds.width = width;
+  surface.height = elevation.height = night.height = clouds.height = height;
+  const surfaceContext = surface.getContext("2d");
+  const elevationContext = elevation.getContext("2d");
+  const nightContext = night.getContext("2d");
+  const cloudContext = clouds.getContext("2d");
+  if (!surfaceContext || !elevationContext || !nightContext || !cloudContext) return null;
+
+  const random = seededRandom("earth-realistic-v2");
+  const oceanGradient = surfaceContext.createLinearGradient(0, 0, 0, height);
+  oceanGradient.addColorStop(0, "#163f73");
+  oceanGradient.addColorStop(0.35, "#0c5c91");
+  oceanGradient.addColorStop(0.68, "#0878a2");
+  oceanGradient.addColorStop(1, "#12395f");
+  surfaceContext.fillStyle = oceanGradient;
+  surfaceContext.fillRect(0, 0, width, height);
+
+  for (let index = 0; index < 2800; index += 1) {
+    const latitude = random() * height;
+    surfaceContext.globalAlpha = 0.025 + random() * 0.055;
+    surfaceContext.fillStyle = random() > 0.45 ? "#8ee8ef" : "#042e5d";
+    surfaceContext.fillRect(random() * width, latitude, 1 + random() * 4, 1 + random() * 2);
+  }
+
+  const landGradient = surfaceContext.createLinearGradient(0, height * 0.1, 0, height * 0.9);
+  landGradient.addColorStop(0, "#66875d");
+  landGradient.addColorStop(0.45, "#77a85f");
+  landGradient.addColorStop(0.67, "#8a8e51");
+  landGradient.addColorStop(1, "#4f7558");
+  surfaceContext.globalAlpha = 1;
+  drawEarthContinents(surfaceContext, width, height, landGradient);
+
+  for (let index = 0; index < 1100; index += 1) {
+    const x = random() * width;
+    const y = random() * height;
+    const pixel = surfaceContext.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+    if (pixel[1] > pixel[2] * 0.72 && pixel[0] > 45) {
+      surfaceContext.globalAlpha = 0.08 + random() * 0.18;
+      surfaceContext.fillStyle = random() > 0.65 ? "#d2c17a" : "#284c32";
+      surfaceContext.beginPath();
+      surfaceContext.arc(x, y, 1 + random() * 5, 0, Math.PI * 2);
+      surfaceContext.fill();
+    }
+  }
+
+  surfaceContext.globalAlpha = 0.94;
+  surfaceContext.fillStyle = "#e6f2ee";
+  surfaceContext.fillRect(0, 0, width, 18);
+  surfaceContext.fillRect(0, height - 20, width, 20);
+  surfaceContext.globalAlpha = 0.22;
+  surfaceContext.fillStyle = "#c8f1ff";
+  surfaceContext.fillRect(0, 18, width, 12);
+  surfaceContext.fillRect(0, height - 32, width, 12);
+
+  elevationContext.fillStyle = "#202020";
+  elevationContext.fillRect(0, 0, width, height);
+  elevationContext.globalAlpha = 1;
+  drawEarthContinents(elevationContext, width, height, "#c7c7c7");
+  elevationContext.fillStyle = "#f3f3f3";
+  elevationContext.fillRect(0, 0, width, 16);
+  elevationContext.fillRect(0, height - 18, width, 18);
+
+  nightContext.fillStyle = "#000";
+  nightContext.fillRect(0, 0, width, height);
+  nightContext.fillStyle = "#ffd36b";
+  nightContext.shadowColor = "#ff9d35";
+  nightContext.shadowBlur = 8;
+  const lightClusters: Array<[number, number, number, number]> = [
+    [0.18, 0.29, 0.1, 0.11], [0.24, 0.56, 0.06, 0.13], [0.5, 0.27, 0.14, 0.1],
+    [0.58, 0.48, 0.08, 0.14], [0.72, 0.27, 0.17, 0.12], [0.86, 0.64, 0.1, 0.08],
+  ];
+  lightClusters.forEach(([cx, cy, spreadX, spreadY]) => {
+    for (let index = 0; index < 72; index += 1) {
+      nightContext.globalAlpha = 0.2 + random() * 0.8;
+      const x = (cx + (random() - 0.5) * spreadX) * width;
+      const y = (cy + (random() - 0.5) * spreadY) * height;
+      nightContext.fillRect(x, y, 0.8 + random() * 1.8, 0.8 + random() * 1.8);
+    }
+  });
+
+  cloudContext.clearRect(0, 0, width, height);
+  cloudContext.lineCap = "round";
+  for (let index = 0; index < 52; index += 1) {
+    const y = 28 + random() * (height - 56);
+    const startX = -80 + random() * width;
+    cloudContext.globalAlpha = 0.12 + random() * 0.34;
+    cloudContext.strokeStyle = random() > 0.18 ? "#ffffff" : "#d5edf5";
+    cloudContext.lineWidth = 5 + random() * 14;
+    cloudContext.beginPath();
+    cloudContext.moveTo(startX, y);
+    cloudContext.bezierCurveTo(
+      startX + 70 + random() * 90,
+      y - 28 + random() * 56,
+      startX + 180 + random() * 120,
+      y - 22 + random() * 44,
+      startX + 280 + random() * 150,
+      y + (random() - 0.5) * 36,
+    );
+    cloudContext.stroke();
+  }
+
+  const toTexture = (canvas: HTMLCanvasElement) => {
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  };
+
+  return {
+    map: toTexture(surface),
+    bumpMap: toTexture(elevation),
+    emissiveMap: toTexture(night),
+    cloudMap: toTexture(clouds),
+  };
+}
+
+function createBodyTextures(body: CelestialBody): BodyTextures | null {
+  if (body.id === "earth") return createEarthTextures();
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 256;
@@ -353,19 +518,61 @@ function createBodyTexture(body: CelestialBody) {
   texture.wrapS = THREE.RepeatWrapping;
   texture.anisotropy = 4;
   texture.needsUpdate = true;
-  return texture;
+  return { map: texture };
 }
 
-function RotationIndicator({ radius }: { radius: number }) {
+function RotationIndicator({ radius, playing, speed }: { radius: number; playing: boolean; speed: number }) {
+  const indicatorRef = useRef<THREE.Group>(null);
+  const curve = useMemo(() => {
+    const points = Array.from({ length: 42 }, (_, index) => {
+      const angle = -Math.PI * 0.82 + (index / 41) * Math.PI * 1.62;
+      return new THREE.Vector3(Math.cos(angle) * radius * 1.36, 0, Math.sin(angle) * radius * 1.36);
+    });
+    return new THREE.CatmullRomCurve3(points);
+  }, [radius]);
+  const arrowPosition = useMemo(() => curve.getPoint(1), [curve]);
+  const arrowTangent = useMemo(() => curve.getTangent(1), [curve]);
+  const arrowQuaternion = useMemo(
+    () => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), arrowTangent),
+    [arrowTangent],
+  );
+
+  useFrame((_, delta) => {
+    if (indicatorRef.current && playing) {
+      indicatorRef.current.rotation.y += delta * 0.62 * speed;
+    }
+  });
+
   return (
-    <group position={[0, radius * 1.32, 0]} rotation={[Math.PI / 2, 0, 0]}>
+    <group ref={indicatorRef} rotation={[0.18, 0, -0.12]}>
       <mesh>
-        <torusGeometry args={[radius * 1.22, Math.max(0.025, radius * 0.035), 8, 56, Math.PI * 1.62]} />
-        <meshBasicMaterial color="#70e2cf" transparent opacity={0.8} />
+        <tubeGeometry args={[curve, 64, Math.max(0.018, radius * 0.026), 8, false]} />
+        <meshBasicMaterial color="#a0fff0" transparent opacity={0.94} toneMapped={false} />
       </mesh>
-      <mesh position={[-radius * 1.22, radius * 0.02, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <coneGeometry args={[Math.max(0.07, radius * 0.12), Math.max(0.18, radius * 0.32), 14]} />
-        <meshBasicMaterial color="#70e2cf" />
+      <mesh>
+        <tubeGeometry args={[curve, 64, Math.max(0.05, radius * 0.072), 8, false]} />
+        <meshBasicMaterial
+          color="#38d9c0"
+          transparent
+          opacity={0.16}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh position={arrowPosition} quaternion={arrowQuaternion}>
+        <coneGeometry args={[Math.max(0.075, radius * 0.11), Math.max(0.2, radius * 0.3), 20]} />
+        <meshBasicMaterial color="#c5fff5" toneMapped={false} />
+      </mesh>
+      <mesh position={curve.getPoint(0.48)}>
+        <sphereGeometry args={[Math.max(0.04, radius * 0.055), 16, 12]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          blending={THREE.AdditiveBlending}
+          transparent
+          opacity={0.88}
+          toneMapped={false}
+        />
       </mesh>
     </group>
   );
@@ -397,10 +604,18 @@ function CelestialSphere({
   scale = 1,
 }: BodyProps) {
   const spinRef = useRef<THREE.Group>(null);
-  const texture = useMemo(() => createBodyTexture(body), [body]);
+  const textures = useMemo(() => createBodyTextures(body), [body]);
   const radius = body.radius * scale;
 
-  useEffect(() => () => texture?.dispose(), [texture]);
+  useEffect(
+    () => () => {
+      textures?.map.dispose();
+      textures?.bumpMap?.dispose();
+      textures?.emissiveMap?.dispose();
+      textures?.cloudMap?.dispose();
+    },
+    [textures],
+  );
 
   useFrame((_, delta) => {
     if (!spinRef.current || !playing) return;
@@ -425,16 +640,37 @@ function CelestialSphere({
         >
           <sphereGeometry args={[radius, 48, 32]} />
           {body.id === "sun" ? (
-            <meshBasicMaterial map={texture ?? undefined} color={body.color} />
+            <meshBasicMaterial map={textures?.map} color={body.color} toneMapped={false} />
           ) : (
             <meshStandardMaterial
-              map={texture ?? undefined}
+              map={textures?.map}
+              bumpMap={textures?.bumpMap}
+              bumpScale={body.id === "earth" ? radius * 0.035 : 0}
+              emissive={body.id === "earth" ? "#ffb04a" : "#000000"}
+              emissiveMap={textures?.emissiveMap}
+              emissiveIntensity={body.id === "earth" ? 0.32 : 0}
               color="#ffffff"
-              roughness={0.86}
-              metalness={0.02}
+              roughness={body.id === "earth" ? 0.68 : 0.86}
+              metalness={body.id === "earth" ? 0.06 : 0.02}
             />
           )}
         </mesh>
+
+        {body.id === "earth" && textures?.cloudMap && (
+          <mesh castShadow scale={1.012}>
+            <sphereGeometry args={[radius, 56, 40]} />
+            <meshStandardMaterial
+              map={textures.cloudMap}
+              alphaMap={textures.cloudMap}
+              color="#ffffff"
+              transparent
+              opacity={0.7}
+              alphaTest={0.08}
+              roughness={1}
+              depthWrite={false}
+            />
+          </mesh>
+        )}
 
         {marker && (
           <group position={[radius * 1.03, 0, 0]}>
@@ -469,13 +705,56 @@ function CelestialSphere({
       )}
 
       {body.id === "sun" && (
-        <mesh scale={1.09}>
-          <sphereGeometry args={[radius, 40, 28]} />
-          <meshBasicMaterial color="#ff9f2d" transparent opacity={0.13} side={THREE.BackSide} />
-        </mesh>
+        <>
+          <mesh scale={1.09}>
+            <sphereGeometry args={[radius, 40, 28]} />
+            <meshBasicMaterial color="#ff9f2d" transparent opacity={0.18} side={THREE.BackSide} toneMapped={false} />
+          </mesh>
+          <mesh scale={1.2}>
+            <sphereGeometry args={[radius, 40, 28]} />
+            <meshBasicMaterial
+              color="#ffb12e"
+              transparent
+              opacity={0.06}
+              side={THREE.BackSide}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        </>
       )}
 
-      {arrows && body.id !== "sun" && <RotationIndicator radius={radius} />}
+      {body.id === "earth" && (
+        <>
+          <mesh scale={1.045}>
+            <sphereGeometry args={[radius, 56, 40]} />
+            <meshBasicMaterial
+              color="#4bbdff"
+              transparent
+              opacity={0.1}
+              side={THREE.BackSide}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+          <mesh scale={1.085}>
+            <sphereGeometry args={[radius, 56, 40]} />
+            <meshBasicMaterial
+              color="#1d84d9"
+              transparent
+              opacity={0.035}
+              side={THREE.BackSide}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        </>
+      )}
+
+      {arrows && body.id !== "sun" && <RotationIndicator radius={radius} playing={playing} speed={speed} />}
 
       {labels && (
         <Html center position={[0, radius + 0.68, 0]}>
@@ -487,6 +766,7 @@ function CelestialSphere({
 }
 
 function OrbitTrack({ body, active }: { body: CelestialBody; active: boolean }) {
+  const arrowsRef = useRef<THREE.Group>(null);
   const points = useMemo(
     () =>
       Array.from({ length: 97 }, (_, index) => {
@@ -500,20 +780,55 @@ function OrbitTrack({ body, active }: { body: CelestialBody; active: boolean }) 
     [body],
   );
 
+  useFrame((_, delta) => {
+    if (arrowsRef.current && active) arrowsRef.current.rotation.y -= delta * 0.18;
+  });
+
   return (
     <group rotation={[THREE.MathUtils.degToRad(body.orbitTilt), 0, 0]}>
+      {active && (
+        <Line
+          points={points}
+          color="#2bdcc2"
+          transparent
+          opacity={0.12}
+          lineWidth={3.8}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      )}
       <Line
         points={points}
-        color={active ? "#70e2cf" : "#77766f"}
+        color={active ? "#8effee" : "#77766f"}
         transparent
-        opacity={active ? 0.58 : 0.27}
-        lineWidth={active ? 1.25 : 0.7}
+        opacity={active ? 0.72 : 0.27}
+        lineWidth={active ? 1.45 : 0.7}
       />
       {active && (
-        <mesh position={[body.orbitRadius * 0.62, 0.04, body.orbitRadius * 0.78]} rotation={[0, 0.6, Math.PI / 2]}>
-          <coneGeometry args={[0.11, 0.35, 14]} />
-          <meshBasicMaterial color="#70e2cf" />
-        </mesh>
+        <group ref={arrowsRef}>
+          {[0.18, 0.52, 0.84].map((turn) => {
+            const angle = turn * Math.PI * 2;
+            return (
+              <group key={turn} rotation={[0, -angle, 0]}>
+                <mesh position={[body.orbitRadius, 0.055, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                  <coneGeometry args={[0.1, 0.3, 18]} />
+                  <meshBasicMaterial color="#c7fff6" toneMapped={false} />
+                </mesh>
+                <mesh position={[body.orbitRadius, 0.055, 0]} scale={1.9} rotation={[Math.PI / 2, 0, 0]}>
+                  <coneGeometry args={[0.1, 0.3, 18]} />
+                  <meshBasicMaterial
+                    color="#36dfc5"
+                    transparent
+                    opacity={0.16}
+                    blending={THREE.AdditiveBlending}
+                    depthWrite={false}
+                    toneMapped={false}
+                  />
+                </mesh>
+              </group>
+            );
+          })}
+        </group>
       )}
     </group>
   );
@@ -733,13 +1048,13 @@ function DayNightScene({ playing, speed, overlays }: { playing: boolean; speed: 
         />
       </group>
       {overlays.light && (
-        <Line
-          points={[new THREE.Vector3(-5, 2.4, 0), new THREE.Vector3(1.4, 2.4, 0)]}
-          color="#ffd564"
-          transparent
-          opacity={0.5}
-          lineWidth={1.2}
-          dashed
+        <LightStream
+          from={[-4.7, 0, 0]}
+          to={[1.45, 0, 0]}
+          sourceRadius={2.35}
+          targetRadius={1.5}
+          playing={playing}
+          speed={speed}
         />
       )}
       <Html center position={[-1.2, 3.1, 0]}>
@@ -797,6 +1112,17 @@ function SolarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
           </mesh>
         )}
       </group>
+      {overlays.light && (
+        <LightStream
+          from={[-5.5, 0, 0]}
+          to={[6.6, 0, 0]}
+          sourceRadius={2.3}
+          targetRadius={1.55}
+          playing={playing}
+          speed={speed}
+          opacity={0.9}
+        />
+      )}
       <group position={[earthX, 0, 0]} name="body-earth">
         <CelestialSphere body={earth} labels={overlays.labels} speed={speed} playing={playing} scale={2.18} />
       </group>
@@ -855,6 +1181,17 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
       <group position={[0, 0, 0]} name="body-earth">
         <CelestialSphere body={earth} labels={overlays.labels} speed={speed} playing={playing} scale={2.25} />
       </group>
+      {overlays.light && (
+        <LightStream
+          from={[-5.5, 0, 0]}
+          to={[7.5, 0, 0]}
+          sourceRadius={2.3}
+          targetRadius={1.4}
+          playing={playing}
+          speed={speed}
+          opacity={0.9}
+        />
+      )}
       {overlays.light && (
         <mesh position={[4, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
           <cylinderGeometry args={[0.72, 1.46, 8, 32, 1, true]} />
