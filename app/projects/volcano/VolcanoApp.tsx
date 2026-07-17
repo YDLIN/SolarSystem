@@ -74,18 +74,18 @@ const HOTSPOTS: Record<VolcanoHotspotId, Hotspot> = {
   },
   fissure: {
     id: "fissure",
-    name: "喷发裂口",
-    eyebrow: "海床出口",
-    fact: "张开的板块边界为岩浆提供通道，岩浆可以从海床裂口挤入海水。",
-    position: [0, 1.2, 0],
-    cameraOffset: [5.3, 3.4, 6.6],
+    name: "山顶火山口",
+    eyebrow: "岩浆的地表出口",
+    fact: "火山体长出海面后，岩浆中的气体更容易膨胀；岩浆、气体和碎屑会从山顶火山口喷出。",
+    position: [0, 8.86, 3.7],
+    cameraOffset: [5.7, 2.9, 7.4],
   },
   "pillow-lava": {
     id: "pillow-lava",
     name: "枕状熔岩",
     eyebrow: "新生的岩石",
     fact: "海水让熔岩外壳迅速变硬，内部仍热的熔岩继续挤出，形成一团团“石头枕头”。",
-    position: [1.65, 1.22, 0.15],
+    position: [-4.5, 1.02, 1.2],
     cameraOffset: [5, 3.1, 6.2],
   },
 };
@@ -236,6 +236,136 @@ function createIrregularRockGeometry(
     position.setXYZ(index, vertex.x, vertex.y, vertex.z);
   }
 
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+const VOLCANO_BASE_Y = 1.05;
+const VOLCANO_SUMMIT_Y = 8.78;
+const VOLCANO_SLICE_Z = 3.7;
+const SEA_LEVEL = 5.8;
+
+function volcanoRadiusAtHeight(y: number) {
+  const progress = THREE.MathUtils.clamp(
+    (y - VOLCANO_BASE_Y) / (VOLCANO_SUMMIT_Y - VOLCANO_BASE_Y),
+    0,
+    1,
+  );
+  const broadCone = 0.62 + 4.42 * Math.pow(1 - progress, 0.72);
+  const shoulder =
+    Math.exp(-Math.pow((progress - 0.34) / 0.18, 2)) * 0.28;
+  return broadCone + shoulder;
+}
+
+function createVolcanoExteriorGeometry() {
+  const geometry = new THREE.CylinderGeometry(
+    0.66,
+    5.05,
+    VOLCANO_SUMMIT_Y - VOLCANO_BASE_Y,
+    72,
+    22,
+    true,
+    Math.PI / 2,
+    Math.PI,
+  );
+  const position = geometry.getAttribute("position");
+  const vertex = new THREE.Vector3();
+
+  for (let index = 0; index < position.count; index += 1) {
+    vertex.fromBufferAttribute(position, index);
+    const verticalProgress =
+      (vertex.y + (VOLCANO_SUMMIT_Y - VOLCANO_BASE_Y) / 2) /
+      (VOLCANO_SUMMIT_Y - VOLCANO_BASE_Y);
+    const angle = Math.atan2(vertex.x, vertex.z);
+    const ridgeNoise =
+      Math.sin(angle * 7 + verticalProgress * 8.2) * 0.055 +
+      Math.sin(angle * 13 - verticalProgress * 5.6) * 0.026 +
+      Math.sin(verticalProgress * 31 + angle * 3) * 0.018;
+    const radialScale = 1 + ridgeNoise * (1 - verticalProgress * 0.34);
+    position.setXYZ(
+      index,
+      vertex.x * radialScale,
+      vertex.y + Math.sin(angle * 9) * 0.045,
+      vertex.z * radialScale,
+    );
+  }
+
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createVolcanoBandGeometry(
+  bottomY: number,
+  topY: number,
+  bandIndex: number,
+) {
+  const rows = 5;
+  const columns = 16;
+  const vertices: number[] = [];
+  const indices: number[] = [];
+
+  for (let row = 0; row <= rows; row += 1) {
+    const rowProgress = row / rows;
+    const y =
+      bottomY +
+      (topY - bottomY) * rowProgress +
+      Math.sin(row * 1.7 + bandIndex) * 0.025;
+    const radius = volcanoRadiusAtHeight(y);
+    for (let column = 0; column <= columns; column += 1) {
+      const columnProgress = column / columns;
+      const x = -radius + radius * 2 * columnProgress;
+      const edgeFade = Math.sin(columnProgress * Math.PI);
+      const rockRelief =
+        Math.sin(column * 1.9 + row * 1.3 + bandIndex * 0.7) *
+          0.045 *
+          edgeFade +
+        Math.sin(column * 0.65 - row * 2.1) * 0.022;
+      vertices.push(x, y, VOLCANO_SLICE_Z + rockRelief);
+    }
+  }
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const stride = columns + 1;
+      const topLeft = row * stride + column;
+      const topRight = topLeft + 1;
+      const bottomLeft = topLeft + stride;
+      const bottomRight = bottomLeft + 1;
+      indices.push(
+        topLeft,
+        bottomLeft,
+        topRight,
+        topRight,
+        bottomLeft,
+        bottomRight,
+      );
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(vertices, 3),
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function createCraterGeometry() {
+  const geometry = new THREE.TorusGeometry(0.64, 0.19, 12, 44);
+  const position = geometry.getAttribute("position");
+  const vertex = new THREE.Vector3();
+  for (let index = 0; index < position.count; index += 1) {
+    vertex.fromBufferAttribute(position, index);
+    const noise =
+      1 +
+      Math.sin(index * 1.31) * 0.09 +
+      Math.sin(index * 0.37 + 2.4) * 0.045;
+    position.setXYZ(index, vertex.x * noise, vertex.y, vertex.z * noise);
+  }
   position.needsUpdate = true;
   geometry.computeVertexNormals();
   return geometry;
@@ -487,6 +617,232 @@ function OceanicCrust({
   );
 }
 
+const VOLCANO_BANDS = [
+  [1.05, 1.88, "#342720"],
+  [1.88, 2.68, "#4a3026"],
+  [2.68, 3.47, "#2a2521"],
+  [3.47, 4.24, "#56372b"],
+  [4.24, 5.03, "#312923"],
+  [5.03, 5.82, "#624133"],
+  [5.82, 6.6, "#35312c"],
+  [6.6, 7.35, "#6a4937"],
+  [7.35, 8.08, "#38322d"],
+  [8.08, 8.78, "#4e352c"],
+] as const;
+
+function SurfaceLavaRills({
+  stage,
+  playing,
+  speed,
+}: {
+  stage: VolcanoStage;
+  playing: boolean;
+  speed: number;
+}) {
+  const glowRef = useRef<THREE.MeshStandardMaterial>(null);
+  const paths = useMemo(
+    () => [
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.08, 8.7, VOLCANO_SLICE_Z + 0.14),
+        new THREE.Vector3(0.48, 8.02, VOLCANO_SLICE_Z + 0.2),
+        new THREE.Vector3(0.82, 7.28, VOLCANO_SLICE_Z + 0.22),
+        new THREE.Vector3(1.35, 6.5, VOLCANO_SLICE_Z + 0.24),
+        new THREE.Vector3(1.92, 5.86, VOLCANO_SLICE_Z + 0.26),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.16, 8.68, VOLCANO_SLICE_Z + 0.12),
+        new THREE.Vector3(-0.62, 7.92, VOLCANO_SLICE_Z + 0.18),
+        new THREE.Vector3(-1.2, 7.24, VOLCANO_SLICE_Z + 0.2),
+        new THREE.Vector3(-1.63, 6.53, VOLCANO_SLICE_Z + 0.24),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.32, 7.65, VOLCANO_SLICE_Z + 0.1),
+        new THREE.Vector3(0.82, 7.18, VOLCANO_SLICE_Z + 0.14),
+        new THREE.Vector3(1.28, 6.83, VOLCANO_SLICE_Z + 0.18),
+      ]),
+    ],
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    if (!glowRef.current) return;
+    const active = stage === "eruption" || stage === "cooling";
+    const pulse = active
+      ? 0.72 + (Math.sin(clock.elapsedTime * speed * 2.2) + 1) * 0.18
+      : 0.08;
+    glowRef.current.emissiveIntensity =
+      (playing || !active ? pulse : 0.76) * 2;
+  });
+
+  const visible = stage === "eruption" || stage === "cooling";
+
+  return (
+    <group>
+      {paths.map((curve, index) => (
+        <group key={index}>
+          <mesh>
+            <tubeGeometry args={[curve, 36, 0.078 - index * 0.012, 8, false]} />
+            <meshStandardMaterial color="#1f1714" roughness={0.96} />
+          </mesh>
+          <mesh>
+            <tubeGeometry args={[curve, 36, 0.035 - index * 0.005, 8, false]} />
+            <meshStandardMaterial
+              ref={index === 0 ? glowRef : undefined}
+              color={visible ? "#ff8c2d" : "#291915"}
+              emissive={visible ? "#ff3006" : "#130706"}
+              emissiveIntensity={visible ? 1.5 : 0.03}
+              roughness={0.42}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function VolcanoIsland({
+  stage,
+  cutaway,
+  playing,
+  speed,
+}: {
+  stage: VolcanoStage;
+  cutaway: boolean;
+  playing: boolean;
+  speed: number;
+}) {
+  const exteriorGeometry = useMemo(() => createVolcanoExteriorGeometry(), []);
+  const craterGeometry = useMemo(() => createCraterGeometry(), []);
+  const bandGeometries = useMemo(
+    () =>
+      VOLCANO_BANDS.map(([bottom, top], index) =>
+        createVolcanoBandGeometry(bottom, top, index),
+      ),
+    [],
+  );
+
+  return (
+    <group>
+      <mesh
+        geometry={exteriorGeometry}
+        position={[
+          0,
+          (VOLCANO_BASE_Y + VOLCANO_SUMMIT_Y) / 2,
+          VOLCANO_SLICE_Z - 0.06,
+        ]}
+      >
+        <meshStandardMaterial
+          color="#28312d"
+          roughness={1}
+          metalness={0.01}
+          flatShading
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {bandGeometries.map((geometry, index) => (
+        <mesh key={index} geometry={geometry}>
+          <meshStandardMaterial
+            color={VOLCANO_BANDS[index][2]}
+            roughness={0.96}
+            metalness={0.01}
+            flatShading
+            transparent
+            opacity={cutaway ? 0.98 : 0.62}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+
+      {VOLCANO_BANDS.slice(1).map(([bottom], index) => {
+        const radius = volcanoRadiusAtHeight(bottom);
+        const points = Array.from({ length: 13 }, (_, pointIndex) => {
+          const progress = pointIndex / 12;
+          return [
+            -radius + progress * radius * 2,
+            bottom +
+              Math.sin(progress * Math.PI * 3 + index * 0.85) * 0.045,
+            VOLCANO_SLICE_Z + 0.07,
+          ] as Point3;
+        });
+        return (
+          <Line
+            key={bottom}
+            points={points}
+            color={index % 2 === 0 ? "#9c6a4b" : "#1a1715"}
+            lineWidth={0.75}
+            transparent
+            opacity={cutaway ? 0.62 : 0.26}
+          />
+        );
+      })}
+
+      {[-3.2, -2.35, 2.45, 3.3].map((x, index) => (
+        <Line
+          key={x}
+          points={[
+            [x, 1.18, VOLCANO_SLICE_Z + 0.08],
+            [x * 0.82, 2.6, VOLCANO_SLICE_Z + 0.1],
+            [x * 0.58, 4.35, VOLCANO_SLICE_Z + 0.1],
+            [x * 0.34, 6.1, VOLCANO_SLICE_Z + 0.11],
+            [x * 0.12, 8.26, VOLCANO_SLICE_Z + 0.12],
+          ]}
+          color={index % 2 === 0 ? "#72503d" : "#181817"}
+          lineWidth={0.55}
+          transparent
+          opacity={0.46}
+        />
+      ))}
+
+      <mesh
+        geometry={craterGeometry}
+        position={[0, VOLCANO_SUMMIT_Y, VOLCANO_SLICE_Z - 0.02]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[1.12, 0.68, 1]}
+      >
+        <meshStandardMaterial
+          color="#171615"
+          roughness={0.98}
+          flatShading
+        />
+      </mesh>
+      <mesh
+        position={[0, VOLCANO_SUMMIT_Y + 0.01, VOLCANO_SLICE_Z + 0.02]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <circleGeometry args={[0.53, 32]} />
+        <meshStandardMaterial
+          color="#7e2112"
+          emissive="#ff3008"
+          emissiveIntensity={stage === "eruption" ? 2.4 : 0.72}
+          roughness={0.5}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh
+        position={[0, SEA_LEVEL, VOLCANO_SLICE_Z - 0.1]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[1, 0.72, 1]}
+      >
+        <torusGeometry
+          args={[volcanoRadiusAtHeight(SEA_LEVEL), 0.075, 8, 72]}
+        />
+        <meshStandardMaterial
+          color="#87d7dc"
+          emissive="#2a7182"
+          emissiveIntensity={0.7}
+          transparent
+          opacity={0.58}
+          roughness={0.35}
+        />
+      </mesh>
+
+      <SurfaceLavaRills stage={stage} playing={playing} speed={speed} />
+    </group>
+  );
+}
+
 function MagmaConduit() {
   const chamberRef = useRef<THREE.Group>(null);
   const chamberGeometry = useMemo(
@@ -501,6 +857,11 @@ function MagmaConduit() {
         new THREE.Vector3(-0.2, -0.82, 0.02),
         new THREE.Vector3(0, 0.2, 0),
         new THREE.Vector3(0, 1.2, 0),
+        new THREE.Vector3(0.13, 2.75, 0.02),
+        new THREE.Vector3(-0.08, 4.35, -0.02),
+        new THREE.Vector3(0.1, 6.1, 0.01),
+        new THREE.Vector3(-0.03, 7.55, 0),
+        new THREE.Vector3(0, 8.82, 0),
       ]),
     [],
   );
@@ -512,9 +873,24 @@ function MagmaConduit() {
         new THREE.Vector3(-0.9, 0.24, 0.12),
       ]),
       new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.05, -0.45, -0.04),
-        new THREE.Vector3(0.48, 0.04, -0.1),
-        new THREE.Vector3(0.7, 0.62, -0.12),
+        new THREE.Vector3(0.02, 2.45, -0.04),
+        new THREE.Vector3(0.62, 2.92, -0.08),
+        new THREE.Vector3(1.35, 3.28, -0.12),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.03, 3.78, 0),
+        new THREE.Vector3(-0.75, 4.22, 0.04),
+        new THREE.Vector3(-1.55, 4.45, 0.08),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.04, 5.38, -0.02),
+        new THREE.Vector3(0.8, 5.88, 0.02),
+        new THREE.Vector3(1.66, 6.1, 0.06),
+      ]),
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.02, 6.62, 0),
+        new THREE.Vector3(-0.6, 7.02, 0.04),
+        new THREE.Vector3(-1.18, 7.3, 0.08),
       ]),
     ],
     [],
@@ -529,7 +905,7 @@ function MagmaConduit() {
   return (
     <group>
       <mesh>
-        <tubeGeometry args={[mainConduit, 52, 0.23, 10, false]} />
+        <tubeGeometry args={[mainConduit, 112, 0.22, 12, false]} />
         <meshStandardMaterial
           color="#2d1713"
           roughness={0.9}
@@ -538,7 +914,7 @@ function MagmaConduit() {
         />
       </mesh>
       <mesh>
-        <tubeGeometry args={[mainConduit, 52, 0.135, 10, false]} />
+        <tubeGeometry args={[mainConduit, 112, 0.125, 12, false]} />
         <meshStandardMaterial
           color="#ff7a25"
           emissive="#ff2f05"
@@ -707,6 +1083,59 @@ function OceanParticles({ playing, speed }: { playing: boolean; speed: number })
   );
 }
 
+function CloudCluster({
+  position,
+  scale,
+}: {
+  position: Point3;
+  scale: number;
+}) {
+  return (
+    <group position={position} scale={scale}>
+      {[
+        [-0.75, 0, 0, 0.62],
+        [-0.2, 0.18, 0.05, 0.86],
+        [0.52, 0.04, -0.02, 0.7],
+        [1.05, -0.08, 0.02, 0.48],
+      ].map(([x, y, z, puffScale], index) => (
+        <mesh key={index} position={[x, y, z]} scale={puffScale}>
+          <sphereGeometry args={[1, 18, 12]} />
+          <meshBasicMaterial
+            color={index % 2 === 0 ? "#d8e6e5" : "#f0f4ef"}
+            transparent
+            opacity={0.16}
+            depthWrite={false}
+            fog={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function AtmosphericSky() {
+  return (
+    <group>
+      <mesh position={[0, 8.7, -7.8]}>
+        <planeGeometry args={[34, 16]} />
+        <meshBasicMaterial color="#16435b" fog={false} />
+      </mesh>
+      <mesh position={[-7.4, 11.1, -7.55]}>
+        <circleGeometry args={[1.35, 40]} />
+        <meshBasicMaterial
+          color="#b8e0df"
+          transparent
+          opacity={0.22}
+          fog={false}
+        />
+      </mesh>
+      <CloudCluster position={[-7.1, 8.8, -6.8]} scale={0.8} />
+      <CloudCluster position={[6.8, 9.5, -6.9]} scale={0.62} />
+      <CloudCluster position={[-3.8, 10.7, -7]} scale={0.45} />
+    </group>
+  );
+}
+
 function OceanSurface({
   playing,
   speed,
@@ -735,15 +1164,15 @@ function OceanSurface({
   });
 
   return (
-    <mesh position={[0, 5.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={[0, SEA_LEVEL, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry ref={geometryRef} args={[20, 8, 34, 16]} />
       <meshPhysicalMaterial
-        color="#2c8795"
+        color="#318fa0"
         emissive="#123d4a"
-        emissiveIntensity={0.28}
+        emissiveIntensity={0.34}
         transparent
-        opacity={0.3}
-        roughness={0.2}
+        opacity={0.42}
+        roughness={0.26}
         metalness={0.08}
         side={THREE.DoubleSide}
       />
@@ -858,6 +1287,199 @@ function EjectaSpark({
         emissiveIntensity={2}
       />
     </mesh>
+  );
+}
+
+function AshPuff({
+  index,
+  stage,
+  playing,
+  speed,
+}: {
+  index: number;
+  stage: VolcanoStage;
+  playing: boolean;
+  speed: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+  const elapsed = useRef(index * 0.33);
+  const geometry = useMemo(
+    () => createIrregularRockGeometry(1, 1, 10.4 + index * 0.63),
+    [index],
+  );
+
+  useEffect(() => {
+    elapsed.current = index * 0.33;
+  }, [index, stage]);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    if (playing) elapsed.current += delta * speed;
+    const duration = stage === "eruption" ? 5.6 : 7.4;
+    const progress = loopingProgress(elapsed.current + index * 0.22, duration);
+    const active = stage === "eruption" || stage === "cooling";
+    const coolingScale = stage === "cooling" ? 0.42 : 1;
+    const spread = 0.3 + progress * 1.7;
+    ref.current.position.set(
+      Math.sin(index * 2.17) * spread + progress * 0.72,
+      VOLCANO_SUMMIT_Y + 0.58 + progress * (stage === "eruption" ? 3.4 : 1.8),
+      VOLCANO_SLICE_Z -
+        0.18 +
+        Math.cos(index * 1.73) * (0.2 + progress * 0.72),
+    );
+    const fade = Math.sin(progress * Math.PI);
+    ref.current.scale.setScalar(
+      active
+        ? coolingScale *
+            Math.max(0.02, fade) *
+            (0.28 + progress * 0.92) *
+            (0.72 + (index % 4) * 0.09)
+        : 0,
+    );
+  });
+
+  return (
+    <mesh ref={ref} geometry={geometry}>
+      <meshStandardMaterial
+        color={
+          stage === "cooling"
+            ? index % 2 === 0
+              ? "#b8c9c7"
+              : "#8fa5a4"
+            : index % 3 === 0
+              ? "#282a2a"
+              : "#404241"
+        }
+        transparent
+        opacity={stage === "cooling" ? 0.2 : 0.42}
+        roughness={1}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+function SummitBomb({
+  index,
+  stage,
+  playing,
+  speed,
+}: {
+  index: number;
+  stage: VolcanoStage;
+  playing: boolean;
+  speed: number;
+}) {
+  const ref = useRef<THREE.Mesh>(null);
+  const elapsed = useRef(index * 0.18);
+
+  useEffect(() => {
+    elapsed.current = index * 0.18;
+  }, [index, stage]);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    if (playing) elapsed.current += delta * speed;
+    const progress = loopingProgress(elapsed.current + index * 0.12, 2.8);
+    const angle = index * 2.399;
+    const distance = progress * (0.55 + (index % 6) * 0.22);
+    ref.current.position.set(
+      Math.cos(angle) * distance,
+      VOLCANO_SUMMIT_Y +
+        0.25 +
+        Math.sin(progress * Math.PI) * (1.4 + (index % 4) * 0.3) -
+        progress * 0.35,
+      VOLCANO_SLICE_Z + Math.sin(angle) * distance * 0.5,
+    );
+    const fade = Math.sin(progress * Math.PI);
+    ref.current.scale.setScalar(
+      stage === "eruption" ? Math.max(0.01, fade) : 0,
+    );
+  });
+
+  return (
+    <mesh ref={ref}>
+      <icosahedronGeometry args={[0.055 + (index % 3) * 0.012, 0]} />
+      <meshStandardMaterial
+        color="#ffc05b"
+        emissive="#ff3107"
+        emissiveIntensity={3.2}
+        roughness={0.3}
+      />
+    </mesh>
+  );
+}
+
+function SummitEruption({
+  stage,
+  playing,
+  speed,
+}: {
+  stage: VolcanoStage;
+  playing: boolean;
+  speed: number;
+}) {
+  const fountainRef = useRef<THREE.Group>(null);
+  const fountainGeometry = useMemo(
+    () => createIrregularRockGeometry(0.48, 2, 4.7),
+    [],
+  );
+
+  useFrame(({ clock }) => {
+    if (!fountainRef.current) return;
+    const active = stage === "eruption";
+    const pulse =
+      0.72 + (Math.sin(clock.elapsedTime * speed * 3.2) + 1) * 0.18;
+    fountainRef.current.scale.set(
+      active ? pulse : 0,
+      active ? pulse * 1.75 : 0,
+      active ? pulse : 0,
+    );
+  });
+
+  return (
+    <group>
+      <group
+        ref={fountainRef}
+        position={[0, VOLCANO_SUMMIT_Y + 0.42, VOLCANO_SLICE_Z]}
+      >
+        <mesh geometry={fountainGeometry}>
+          <meshStandardMaterial
+            color="#ff7d22"
+            emissive="#ff2500"
+            emissiveIntensity={2.8}
+            roughness={0.36}
+            flatShading
+          />
+        </mesh>
+        <mesh geometry={fountainGeometry} scale={0.48}>
+          <meshStandardMaterial
+            color="#ffd86c"
+            emissive="#ff6b12"
+            emissiveIntensity={3.5}
+            roughness={0.25}
+          />
+        </mesh>
+      </group>
+      {Array.from({ length: 18 }, (_, index) => (
+        <AshPuff
+          key={`ash-${index}`}
+          index={index}
+          stage={stage}
+          playing={playing}
+          speed={speed}
+        />
+      ))}
+      {Array.from({ length: 24 }, (_, index) => (
+        <SummitBomb
+          key={`summit-bomb-${index}`}
+          index={index}
+          stage={stage}
+          playing={playing}
+          speed={speed}
+        />
+      ))}
+    </group>
   );
 }
 
@@ -1235,20 +1857,46 @@ function SceneLabels({
       )}
       {stage === "rising" && (
         <>
-          <Html center position={[1.55, -2.35, 0.7]}>
+          <Html center position={[1.55, -2.35, 4.05]}>
             <span className={styles.sceneLabel}>岩浆储集区</span>
           </Html>
-          <Html center position={[1.2, -0.15, 0.7]}>
-            <span className={styles.sceneLabel}>岩层裂隙</span>
+          <Html center position={[1.48, 4.45, 4.05]}>
+            <span className={styles.sceneLabel}>主通道与岩浆支脉</span>
+          </Html>
+        </>
+      )}
+      {stage === "eruption" && (
+        <>
+          <Html center position={[1.7, 9.35, 3.85]}>
+            <span className={styles.sceneLabel}>山顶火山口</span>
+          </Html>
+          <Html center position={[-4.55, 2.08, 1.2]}>
+            <span className={styles.sceneLabel}>侧翼海底喷口</span>
           </Html>
         </>
       )}
       {stage === "cooling" && (
-        <Html center position={[2.45, 1.75, 0.7]}>
-          <span className={styles.sceneLabel}>枕状玄武岩逐层堆积</span>
-        </Html>
+        <>
+          <Html center position={[-4.2, 1.72, 1.15]}>
+            <span className={styles.sceneLabel}>海下形成枕状熔岩</span>
+          </Html>
+          <Html center position={[2.35, 6.25, 3.86]}>
+            <span className={styles.sceneLabel}>海上熔岩沿山坡冷却</span>
+          </Html>
+        </>
       )}
-      <Html center position={[0, stage === "melting" ? -3.55 : 2.2, 0]}>
+      <Html
+        center
+        position={
+          stage === "melting"
+            ? [0, -3.55, 4.05]
+            : stage === "rising"
+              ? [2.2, 5.25, 4.05]
+              : stage === "eruption"
+                ? [2.65, 10.55, 3.55]
+                : [2.75, 7.1, 3.9]
+        }
+      >
         <span className={styles.sceneCaption}>
           {STAGE_DEFINITIONS[stage].sceneLabel}
         </span>
@@ -1343,7 +1991,13 @@ function VolcanoScene({
         color="#285d70"
         intensity={0.7}
       />
+      <directionalLight
+        position={[-8, 12, 6]}
+        color="#ffd7a3"
+        intensity={1.2}
+      />
 
+      <AtmosphericSky />
       <mesh position={[0, 3.25, 0]}>
         <boxGeometry args={[20, 5, 8]} />
         <meshPhysicalMaterial
@@ -1365,12 +2019,23 @@ function VolcanoScene({
         playing={playing}
         speed={speed}
       />
-      <group position={[0, 0, 4.12]}>
+      <VolcanoIsland
+        stage={stage}
+        cutaway={overlays.cutaway}
+        playing={playing}
+        speed={speed}
+      />
+      <group position={[0, 0, VOLCANO_SLICE_Z + 0.1]}>
         <MagmaConduit />
         <MagmaParticles stage={stage} playing={playing} speed={speed} />
       </group>
-      <EruptionFlow stage={stage} playing={playing} speed={speed} />
-      <PillowField stage={stage} playing={playing} speed={speed} />
+      <SummitEruption stage={stage} playing={playing} speed={speed} />
+      <group position={[-4.55, 0.2, 0.8]} scale={0.62}>
+        <EruptionFlow stage={stage} playing={playing} speed={speed} />
+      </group>
+      <group position={[-4.55, 0.18, 0.8]} scale={0.62}>
+        <PillowField stage={stage} playing={playing} speed={speed} />
+      </group>
       {overlays.particles && (
         <OceanParticles playing={playing} speed={speed} />
       )}
@@ -1382,11 +2047,11 @@ function VolcanoScene({
 
       <Line
         points={[
-          [-0.5, 1.16, 3.76],
-          [-0.28, 1.34, 3.82],
-          [-0.08, 1.25, 3.86],
-          [0.12, 1.38, 3.84],
-          [0.34, 1.18, 3.78],
+          [-0.5, 1.16, VOLCANO_SLICE_Z + 0.06],
+          [-0.28, 1.34, VOLCANO_SLICE_Z + 0.12],
+          [-0.08, 1.25, VOLCANO_SLICE_Z + 0.16],
+          [0.12, 1.38, VOLCANO_SLICE_Z + 0.14],
+          [0.34, 1.18, VOLCANO_SLICE_Z + 0.08],
         ]}
         color="#ff8a36"
         lineWidth={1.8}
@@ -1502,15 +2167,15 @@ function VolcanoCanvas({
         powerPreference: "high-performance",
       }}
       onCreated={({ gl, camera }) => {
-        gl.setClearColor("#06141c");
+        gl.setClearColor("#0a2a38");
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.22;
         camera.lookAt(new THREE.Vector3(...definition.cameraTarget));
       }}
       onPointerMissed={() => undefined}
-      aria-label="可以拖动和缩放的三维海底火山剖面"
+      aria-label="可以拖动和缩放的三维火山岛与海底剖面"
     >
-      <fog attach="fog" args={["#06141c", 15, 38]} />
+      <fog attach="fog" args={["#0a2430", 22, 46]} />
       <VolcanoScene
         stage={stage}
         selectedHotspot={selectedHotspot}
@@ -1525,7 +2190,7 @@ function VolcanoCanvas({
         enableDamping
         dampingFactor={0.075}
         minDistance={5}
-        maxDistance={26}
+        maxDistance={34}
         minPolarAngle={0.24}
         maxPolarAngle={Math.PI / 2.05}
         minAzimuthAngle={-Math.PI * 0.48}
@@ -1658,7 +2323,7 @@ export default function VolcanoApp() {
             </span>
             <div>
               <h1>火山的形成</h1>
-              <p>潜入深海，寻找岩浆的旅程</p>
+              <p>从深海岩浆，到穿出海面的火山岛</p>
             </div>
           </div>
         </div>
@@ -1829,7 +2494,7 @@ export default function VolcanoApp() {
 
       <div className={styles.watermark} aria-hidden="true">
         <Waves />
-        <span>洋中脊剖面</span>
+        <span>火山岛 · 海底剖面</span>
         <Layers3 />
       </div>
     </main>
