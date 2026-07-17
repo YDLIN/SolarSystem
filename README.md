@@ -1,98 +1,85 @@
-# vinext-starter
+# 小小太阳系
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+一个面向儿童科普的 3D 太阳系互动演示应用。项目使用 Next.js、vinext、React Three Fiber 和 Three.js 构建，支持观察八大行星公转、自转、昼夜变化，以及日食和月食的几何关系。
 
-## Prerequisites
+## 功能亮点
+
+- 3D 太阳系场景：展示太阳、八大行星、月球和主要轨道。
+- 运动演示：可播放、暂停、重置行星公转和自转。
+- 昼夜模式：观察地球自转、阳光照射和昼夜分界。
+- 日食与月食模式：用简化模型演示太阳、地球、月球之间的遮挡关系。
+- 可视化开关：可控制轨道、名称标签、运动箭头、阳光与影子、月球等辅助元素。
+- 中文界面：适合课堂、亲子讲解和基础天文科普。
+
+## 技术栈
+
+- Next.js 16
+- React 19
+- React Three Fiber
+- Drei
+- Three.js
+- Tailwind CSS
+- vinext
+
+## 环境要求
 
 - Node.js `>=22.13.0`
 
-## Quick Start
+## 本地运行
 
 ```bash
 npm install
 npm run dev
+```
+
+启动后根据终端输出打开本地地址即可预览。
+
+## 常用命令
+
+```bash
+npm run dev
+npm run build
+npm test
+npm run lint
+```
+
+- `npm run dev`：启动本地开发服务。
+- `npm run build`：构建项目并验证 vinext 输出。
+- `npm test`：先构建项目，再运行几何与渲染相关测试。
+- `npm run lint`：运行 ESLint 检查。
+
+## 项目结构
+
+```text
+app/
+  SolarSystemApp.tsx      # 主要 3D 互动应用
+  LightStream.tsx         # 光照可视化组件
+  eclipseGeometry.ts      # 日食、月食几何计算
+  planetOrbit.ts          # 行星轨道计算
+  page.tsx                # 页面入口与分享元信息
+  layout.tsx              # 页面布局与全局元信息
+  globals.css             # 全局样式
+public/
+  favicon.svg             # 网站图标
+  og.png                  # 分享预览图
+tests/
+  *.test.mjs              # 轨道、食相几何与渲染测试
+```
+
+## 访问方式
+
+当前应用是公开的科普演示，不接入用户登录、鉴权或会话业务。部署配置中的 `.openai/hosting.json` 只保存站点项目和可选资源绑定信息。
+
+## 部署
+
+项目包含 Sites 部署配置：
+
+```text
+.openai/hosting.json
+```
+
+如需发布，先运行构建命令确认项目可以正常输出：
+
+```bash
 npm run build
 ```
-
-This starter does not use `wrangler.jsonc`.
-
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
