@@ -26,9 +26,14 @@ import {
   nextForwardEclipsePhase,
 } from "./eclipseGeometry";
 import type { EclipseKind } from "./eclipseGeometry";
+import {
+  orbitPositionFromEccentricAnomaly,
+  orbitPositionFromMeanAnomaly,
+  orbitTangentFromEccentricAnomaly,
+} from "./planetOrbit";
+import type { PlanetOrbitElements } from "./planetOrbit";
 
 export type Mode =
-  | "solar-system"
   | "motion"
   | "day-night"
   | "solar-eclipse"
@@ -53,7 +58,6 @@ const OVERLAY_OPTIONS: Record<OverlayKey, { id: string; label: string }> = {
 };
 
 const MODE_OVERLAYS: Record<Mode, OverlayKey[]> = {
-  "solar-system": ["orbits", "labels", "moon"],
   motion: ["orbits", "labels", "arrows", "moon"],
   "day-night": ["labels", "light"],
   "solar-eclipse": ["orbits", "labels", "light"],
@@ -69,6 +73,9 @@ export type CelestialBody = {
   rotationSpeed: number;
   axialTilt: number;
   orbitTilt: number;
+  orbitEccentricity: number;
+  orbitAscendingNode: number;
+  orbitPerihelionLongitude: number;
   rotationDirection: 1 | -1;
   color: string;
   accent: string;
@@ -86,6 +93,9 @@ const SUN: CelestialBody = {
   rotationSpeed: 0.08,
   axialTilt: 7.25,
   orbitTilt: 0,
+  orbitEccentricity: 0,
+  orbitAscendingNode: 0,
+  orbitPerihelionLongitude: 0,
   rotationDirection: 1,
   color: "#ffb229",
   accent: "#fff0a5",
@@ -94,6 +104,8 @@ const SUN: CelestialBody = {
 };
 
 const PLANETS: CelestialBody[] = [
+  // J2000 approximate orbital elements:
+  // https://ssd.jpl.nasa.gov/planets/approx_pos.html
   {
     id: "mercury",
     name: "水星",
@@ -102,7 +114,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 0.38,
     rotationSpeed: 0.04,
     axialTilt: 0.03,
-    orbitTilt: 7,
+    orbitTilt: 7.00497902,
+    orbitEccentricity: 0.20563593,
+    orbitAscendingNode: 48.33076593,
+    orbitPerihelionLongitude: 77.45779628,
     rotationDirection: 1,
     color: "#9f9487",
     accent: "#d8c8b2",
@@ -117,7 +132,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 0.62,
     rotationSpeed: 0.018,
     axialTilt: 177.4,
-    orbitTilt: 3.4,
+    orbitTilt: 3.39467605,
+    orbitEccentricity: 0.00677672,
+    orbitAscendingNode: 76.67984255,
+    orbitPerihelionLongitude: 131.60246718,
     rotationDirection: -1,
     color: "#d79a55",
     accent: "#ffe0a1",
@@ -133,6 +151,9 @@ const PLANETS: CelestialBody[] = [
     rotationSpeed: 0.34,
     axialTilt: 23.4,
     orbitTilt: 0,
+    orbitEccentricity: 0.01671123,
+    orbitAscendingNode: 0,
+    orbitPerihelionLongitude: 102.93768193,
     rotationDirection: 1,
     color: "#2d78b9",
     accent: "#78c987",
@@ -147,7 +168,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 1.52,
     rotationSpeed: 0.32,
     axialTilt: 25.2,
-    orbitTilt: 1.85,
+    orbitTilt: 1.84969142,
+    orbitEccentricity: 0.0933941,
+    orbitAscendingNode: 49.55953891,
+    orbitPerihelionLongitude: -23.94362959,
     rotationDirection: 1,
     color: "#b95032",
     accent: "#ed9368",
@@ -162,7 +186,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 2.6,
     rotationSpeed: 0.72,
     axialTilt: 3.1,
-    orbitTilt: 1.3,
+    orbitTilt: 1.30439695,
+    orbitEccentricity: 0.04838624,
+    orbitAscendingNode: 100.47390909,
+    orbitPerihelionLongitude: 14.72847983,
     rotationDirection: 1,
     color: "#c89a70",
     accent: "#f2d0a7",
@@ -177,7 +204,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 3.4,
     rotationSpeed: 0.66,
     axialTilt: 26.7,
-    orbitTilt: 2.5,
+    orbitTilt: 2.48599187,
+    orbitEccentricity: 0.05386179,
+    orbitAscendingNode: 113.66242448,
+    orbitPerihelionLongitude: 92.59887831,
     rotationDirection: 1,
     color: "#d9bd7f",
     accent: "#f2e2b0",
@@ -193,7 +223,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 4.1,
     rotationSpeed: 0.44,
     axialTilt: 97.8,
-    orbitTilt: 0.77,
+    orbitTilt: 0.77263783,
+    orbitEccentricity: 0.04725744,
+    orbitAscendingNode: 74.01692503,
+    orbitPerihelionLongitude: 170.9542763,
     rotationDirection: -1,
     color: "#76cbd1",
     accent: "#c1f2ee",
@@ -209,7 +242,10 @@ const PLANETS: CelestialBody[] = [
     orbitPeriod: 4.8,
     rotationSpeed: 0.46,
     axialTilt: 28.3,
-    orbitTilt: 1.77,
+    orbitTilt: 1.77004347,
+    orbitEccentricity: 0.00859048,
+    orbitAscendingNode: 131.78422574,
+    orbitPerihelionLongitude: 44.96476227,
     rotationDirection: 1,
     color: "#315dc7",
     accent: "#7da3ff",
@@ -227,6 +263,9 @@ const MOON: CelestialBody = {
   rotationSpeed: 0.08,
   axialTilt: 6.7,
   orbitTilt: 5.1,
+  orbitEccentricity: 0,
+  orbitAscendingNode: 0,
+  orbitPerihelionLongitude: 0,
   rotationDirection: 1,
   color: "#9b9a96",
   accent: "#d8d5cc",
@@ -242,17 +281,10 @@ const MODES: Array<{
   icon: typeof Orbit;
 }> = [
   {
-    id: "solar-system",
-    label: "太阳系",
-    shortLabel: "太阳系",
-    description: "拖动星空，点一点行星，看看谁离太阳近、谁离太阳远。",
-    icon: Orbit,
-  },
-  {
     id: "motion",
     label: "公转与自转",
     shortLabel: "转动",
-    description: "行星一边自己转，一边沿着轨道绕太阳转。",
+    description: "行星一边自转，一边沿着各自倾斜的椭圆轨道绕太阳公转。",
     icon: Rotate3D,
   },
   {
@@ -790,28 +822,87 @@ function CelestialSphere({
   );
 }
 
-function OrbitTrack({ body, active }: { body: CelestialBody; active: boolean }) {
+function getPlanetOrbitElements(body: CelestialBody): PlanetOrbitElements {
+  return {
+    semiMajorAxis: body.orbitRadius,
+    eccentricity: body.orbitEccentricity,
+    inclinationDeg: body.orbitTilt,
+    ascendingNodeDeg: body.orbitAscendingNode,
+    longitudePerihelionDeg: body.orbitPerihelionLongitude,
+  };
+}
+
+const ORBIT_ARROW_TURNS = [0.18, 0.52, 0.84] as const;
+const ORBIT_ARROW_AXIS = new THREE.Vector3(0, 1, 0);
+
+function OrbitTrack({
+  body,
+  orbitVisible,
+  arrowsVisible,
+  playing,
+  speed,
+}: {
+  body: CelestialBody;
+  orbitVisible: boolean;
+  arrowsVisible: boolean;
+  playing: boolean;
+  speed: number;
+}) {
   const arrowsRef = useRef<THREE.Group>(null);
+  const arrowPhaseRef = useRef(0);
+  const orbit = useMemo(() => getPlanetOrbitElements(body), [body]);
+  const tangentVector = useMemo(() => new THREE.Vector3(), []);
   const points = useMemo(
     () =>
       Array.from({ length: 97 }, (_, index) => {
         const angle = (index / 96) * Math.PI * 2;
-        return new THREE.Vector3(
-          Math.cos(angle) * body.orbitRadius,
-          0,
-          Math.sin(angle) * body.orbitRadius,
-        );
+        const position = orbitPositionFromEccentricAnomaly(orbit, angle);
+        return new THREE.Vector3(position.x, position.y, position.z);
       }),
-    [body],
+    [orbit],
+  );
+  const initialArrowPoses = useMemo(
+    () =>
+      ORBIT_ARROW_TURNS.map((turn) => {
+        const angle = turn * Math.PI * 2;
+        const position = orbitPositionFromEccentricAnomaly(orbit, angle);
+        const tangent = orbitTangentFromEccentricAnomaly(orbit, angle);
+        const direction = new THREE.Vector3(
+          tangent.x,
+          tangent.y,
+          tangent.z,
+        ).normalize();
+        return {
+          position: new THREE.Vector3(position.x, position.y + 0.055, position.z),
+          quaternion: new THREE.Quaternion().setFromUnitVectors(
+            ORBIT_ARROW_AXIS,
+            direction,
+          ),
+        };
+      }),
+    [orbit],
   );
 
   useFrame((_, delta) => {
-    if (arrowsRef.current && active) arrowsRef.current.rotation.y -= delta * 0.18;
+    if (!arrowsRef.current || !arrowsVisible) return;
+    if (playing) {
+      arrowPhaseRef.current += delta * 0.18 * speed;
+    }
+
+    arrowsRef.current.children.forEach((arrow, index) => {
+      const angle =
+        arrowPhaseRef.current + ORBIT_ARROW_TURNS[index] * Math.PI * 2;
+      const position = orbitPositionFromEccentricAnomaly(orbit, angle);
+      const tangent = orbitTangentFromEccentricAnomaly(orbit, angle);
+      tangentVector.set(tangent.x, tangent.y, tangent.z).normalize();
+      arrow.position.set(position.x, position.y + 0.055, position.z);
+      arrow.quaternion.setFromUnitVectors(ORBIT_ARROW_AXIS, tangentVector);
+    });
   });
 
   return (
-    <group rotation={[THREE.MathUtils.degToRad(body.orbitTilt), 0, 0]}>
-      {active && (
+    <>
+      {orbitVisible && arrowsVisible && (
         <Line
           points={points}
           color="#2bdcc2"
@@ -822,47 +913,49 @@ function OrbitTrack({ body, active }: { body: CelestialBody; active: boolean }) 
           depthWrite={false}
         />
       )}
-      <Line
-        points={points}
-        color={active ? "#8effee" : "#77766f"}
-        transparent
-        opacity={active ? 0.72 : 0.27}
-        lineWidth={active ? 1.45 : 0.7}
-      />
-      {active && (
+      {orbitVisible && (
+        <Line
+          points={points}
+          color={arrowsVisible ? "#8effee" : "#77766f"}
+          transparent
+          opacity={arrowsVisible ? 0.72 : 0.27}
+          lineWidth={arrowsVisible ? 1.45 : 0.7}
+        />
+      )}
+      {arrowsVisible && (
         <group ref={arrowsRef}>
-          {[0.18, 0.52, 0.84].map((turn) => {
-            const angle = turn * Math.PI * 2;
-            return (
-              <group key={turn} rotation={[0, -angle, 0]}>
-                <mesh position={[body.orbitRadius, 0.055, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                  <coneGeometry args={[0.1, 0.3, 18]} />
-                  <meshBasicMaterial color="#c7fff6" toneMapped={false} />
-                </mesh>
-                <mesh position={[body.orbitRadius, 0.055, 0]} scale={1.9} rotation={[Math.PI / 2, 0, 0]}>
-                  <coneGeometry args={[0.1, 0.3, 18]} />
-                  <meshBasicMaterial
-                    color="#36dfc5"
-                    transparent
-                    opacity={0.16}
-                    blending={THREE.AdditiveBlending}
-                    depthWrite={false}
-                    toneMapped={false}
-                  />
-                </mesh>
-              </group>
-            );
-          })}
+          {ORBIT_ARROW_TURNS.map((turn, index) => (
+            <group
+              key={turn}
+              position={initialArrowPoses[index].position}
+              quaternion={initialArrowPoses[index].quaternion}
+            >
+              <mesh>
+                <coneGeometry args={[0.1, 0.3, 18]} />
+                <meshBasicMaterial color="#c7fff6" toneMapped={false} />
+              </mesh>
+              <mesh scale={1.9}>
+                <coneGeometry args={[0.1, 0.3, 18]} />
+                <meshBasicMaterial
+                  color="#36dfc5"
+                  transparent
+                  opacity={0.16}
+                  blending={THREE.AdditiveBlending}
+                  depthWrite={false}
+                  toneMapped={false}
+                />
+              </mesh>
+            </group>
+          ))}
         </group>
       )}
-    </group>
+    </>
   );
 }
 
 function OrbitingPlanet({
   body,
   index,
-  mode,
   focusedBody,
   playing,
   speed,
@@ -871,7 +964,6 @@ function OrbitingPlanet({
 }: {
   body: CelestialBody;
   index: number;
-  mode: Mode;
   focusedBody: string | null;
   playing: boolean;
   speed: number;
@@ -879,7 +971,20 @@ function OrbitingPlanet({
   onSelect: (body: CelestialBody) => void;
 }) {
   const positionRef = useRef<THREE.Group>(null);
-  const angleRef = useRef(index * 0.78 + 0.42);
+  const initialMeanAnomaly = index * 0.78 + 0.42;
+  const angleRef = useRef(initialMeanAnomaly);
+  const orbit = getPlanetOrbitElements(body);
+  const [initialPosition] = useState<[number, number, number]>(() => {
+    const computedPosition = orbitPositionFromMeanAnomaly(
+      orbit,
+      initialMeanAnomaly,
+    );
+    return [
+      computedPosition.x,
+      computedPosition.y,
+      computedPosition.z,
+    ];
+  });
 
   useFrame((_, delta) => {
     if (!positionRef.current) return;
@@ -887,20 +992,21 @@ function OrbitingPlanet({
       angleRef.current += delta * (0.2 / body.orbitPeriod) * speed;
     }
     const angle = angleRef.current;
-    positionRef.current.position.set(
-      Math.cos(angle) * body.orbitRadius,
-      0,
-      Math.sin(angle) * body.orbitRadius,
-    );
+    const position = orbitPositionFromMeanAnomaly(orbit, angle);
+    positionRef.current.position.set(position.x, position.y, position.z);
   });
 
   return (
-    <group rotation={[THREE.MathUtils.degToRad(body.orbitTilt), 0, 0]}>
-      <group ref={positionRef} name={`body-${body.id}`}>
+    <group>
+      <group
+        ref={positionRef}
+        name={`body-${body.id}`}
+        position={initialPosition}
+      >
         <CelestialSphere
           body={body}
           labels={overlays.labels}
-          arrows={overlays.arrows && mode === "motion"}
+          arrows={overlays.arrows}
           interactive
           selected={focusedBody === body.id}
           onSelect={onSelect}
@@ -978,14 +1084,12 @@ function OrbitingMoon({
 }
 
 function SolarSystemScene({
-  mode,
   focusedBody,
   playing,
   speed,
   overlays,
   onSelect,
 }: {
-  mode: Mode;
   focusedBody: string | null;
   playing: boolean;
   speed: number;
@@ -1020,14 +1124,22 @@ function SolarSystemScene({
         />
       </group>
       {PLANETS.map((body) =>
-        overlays.orbits ? <OrbitTrack key={`orbit-${body.id}`} body={body} active={mode === "motion"} /> : null,
+        overlays.orbits || overlays.arrows ? (
+          <OrbitTrack
+            key={`orbit-${body.id}`}
+            body={body}
+            orbitVisible={overlays.orbits}
+            arrowsVisible={overlays.arrows}
+            playing={playing}
+            speed={speed}
+          />
+        ) : null,
       )}
       {PLANETS.map((body, index) => (
         <OrbitingPlanet
           key={body.id}
           body={body}
           index={index}
-          mode={mode}
           focusedBody={focusedBody}
           playing={playing}
           speed={speed}
@@ -1303,7 +1415,7 @@ function EclipseScene({
 }
 
 function cameraPreset(mode: Mode, aspect: number) {
-  if (mode === "solar-system" || mode === "motion") {
+  if (mode === "motion") {
     return { position: new THREE.Vector3(0, 17, 28), target: new THREE.Vector3(0, 0, 0) };
   }
   if (mode === "solar-eclipse" || mode === "lunar-eclipse") {
@@ -1351,7 +1463,7 @@ function CameraRig({
     const preset = cameraPreset(mode, size.width / size.height);
     let target = preset.target.clone();
     let position = preset.position.clone();
-    if (focusedBody && (mode === "solar-system" || mode === "motion")) {
+    if (focusedBody && mode === "motion") {
       const object = scene.getObjectByName(`body-${focusedBody}`);
       if (object) {
         target = object.getWorldPosition(new THREE.Vector3());
@@ -1393,7 +1505,7 @@ function CameraRig({
       return;
     }
 
-    if (focusedBody && (mode === "solar-system" || mode === "motion")) {
+    if (focusedBody && mode === "motion") {
       const object = scene.getObjectByName(`body-${focusedBody}`);
       if (object) {
         const worldPosition = object.getWorldPosition(new THREE.Vector3());
@@ -1442,9 +1554,8 @@ function SolarSystemCanvas({
     >
       <fog attach="fog" args={["#050507", 42, 105]} />
       <Stars radius={72} depth={42} count={1700} factor={2.2} saturation={0.24} fade speed={reducedMotion ? 0 : 0.22} />
-      {(mode === "solar-system" || mode === "motion") && (
+      {mode === "motion" && (
         <SolarSystemScene
-          mode={mode}
           focusedBody={focusedBody}
           playing={playing}
           speed={speed}
@@ -1508,7 +1619,7 @@ function Toggle({
 }
 
 export default function SolarSystemApp() {
-  const [mode, setMode] = useState<Mode>("solar-system");
+  const [mode, setMode] = useState<Mode>("motion");
   const [focusedBody, setFocusedBody] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState<0.5 | 1 | 4>(1);
@@ -1543,7 +1654,7 @@ export default function SolarSystemApp() {
     labels: overlays.labels,
     arrows: mode === "motion" ? overlays.arrows : false,
     light: usesTeachingLight ? overlays.light : true,
-    moon: mode === "solar-system" || mode === "motion" ? overlays.moon : true,
+    moon: mode === "motion" ? overlays.moon : true,
   };
 
   const changeMode = (nextMode: Mode) => {
@@ -1654,7 +1765,7 @@ export default function SolarSystemApp() {
         </section>
       )}
 
-      {!settingsOpen && selectedBody && (mode === "solar-system" || mode === "motion") && (
+      {!settingsOpen && selectedBody && mode === "motion" && (
         <aside className="body-fact" aria-live="polite">
           <div>
             <span className="fact-label">正在观察</span>
@@ -1668,7 +1779,7 @@ export default function SolarSystemApp() {
               setFocusedBody(null);
               setResetKey((value) => value + 1);
             }}
-            aria-label="返回太阳系总览"
+            aria-label="返回公转与自转总览"
           >
             <X />
           </button>
@@ -1706,7 +1817,11 @@ export default function SolarSystemApp() {
         {(mode === "solar-eclipse" || mode === "lunar-eclipse") && (
           <p className="eclipse-note">月球轨道倾斜约 5°，所以日食和月食不会每个月都发生。</p>
         )}
-        <p className="scale-note">为了方便观察，大小和距离经过调整</p>
+        <p className="scale-note">
+          {mode === "motion"
+            ? "轨道形状与倾角参考真实数据；大小、距离和速度经过教学调整"
+            : "为了方便观察，大小和距离经过调整"}
+        </p>
         <nav className="mode-bar" aria-label="教学模式">
           {MODES.map((item) => {
             const Icon = item.icon;

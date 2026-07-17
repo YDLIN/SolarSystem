@@ -24,19 +24,26 @@ test("server-renders the solar system application shell", async () => {
   const html = await response.text();
   assert.match(html, /<title>小小太阳系<\/title>/i);
   assert.match(html, /小小太阳系/);
-  assert.match(html, /为了方便观察，大小和距离经过调整/);
+  assert.match(html, /data-mode="motion"/);
+  assert.doesNotMatch(html, /data-mode="solar-system"/);
+  assert.match(html, /行星一边自转，一边沿着各自倾斜的椭圆轨道绕太阳公转/);
+  assert.match(html, /轨道形状与倾角参考真实数据；大小、距离和速度经过教学调整/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
 test("removes the disposable starter preview", async () => {
-  const [page, layout, packageJson] = await Promise.all([
+  const [page, layout, packageJson, solarSystemApp] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
+    readFile(new URL("../app/SolarSystemApp.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /SolarSystemApp/);
   assert.match(layout, /lang="zh-CN"/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(solarSystemApp, /arrows=\{overlays\.arrows\}/);
+  assert.match(solarSystemApp, /arrowsVisible=\{overlays\.arrows\}/);
+  assert.match(solarSystemApp, /overlays\.orbits \|\| overlays\.arrows/);
   await assert.rejects(access(new URL("../app\/_sites-preview", templateRoot)));
 });
