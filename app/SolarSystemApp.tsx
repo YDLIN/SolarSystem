@@ -521,15 +521,26 @@ function createBodyTextures(body: CelestialBody): BodyTextures | null {
   return { map: texture };
 }
 
-function RotationIndicator({ radius, playing, speed }: { radius: number; playing: boolean; speed: number }) {
+function RotationIndicator({
+  radius,
+  playing,
+  speed,
+  direction,
+}: {
+  radius: number;
+  playing: boolean;
+  speed: number;
+  direction: 1 | -1;
+}) {
   const indicatorRef = useRef<THREE.Group>(null);
   const curve = useMemo(() => {
     const points = Array.from({ length: 42 }, (_, index) => {
-      const angle = -Math.PI * 0.82 + (index / 41) * Math.PI * 1.62;
+      const startAngle = direction * Math.PI * 0.82;
+      const angle = startAngle - direction * (index / 41) * Math.PI * 1.62;
       return new THREE.Vector3(Math.cos(angle) * radius * 1.36, 0, Math.sin(angle) * radius * 1.36);
     });
     return new THREE.CatmullRomCurve3(points);
-  }, [radius]);
+  }, [direction, radius]);
   const arrowPosition = useMemo(() => curve.getPoint(1), [curve]);
   const arrowTangent = useMemo(() => curve.getTangent(1), [curve]);
   const arrowQuaternion = useMemo(
@@ -539,7 +550,7 @@ function RotationIndicator({ radius, playing, speed }: { radius: number; playing
 
   useFrame((_, delta) => {
     if (indicatorRef.current && playing) {
-      indicatorRef.current.rotation.y += delta * 0.62 * speed;
+      indicatorRef.current.rotation.y += delta * 0.62 * speed * direction;
     }
   });
 
@@ -754,7 +765,14 @@ function CelestialSphere({
         </>
       )}
 
-      {arrows && body.id !== "sun" && <RotationIndicator radius={radius} playing={playing} speed={speed} />}
+      {arrows && body.id !== "sun" && (
+        <RotationIndicator
+          radius={radius}
+          playing={playing}
+          speed={speed}
+          direction={body.rotationDirection}
+        />
+      )}
 
       {labels && (
         <Html center position={[0, radius + 0.68, 0]}>
