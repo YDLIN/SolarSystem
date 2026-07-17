@@ -1,0 +1,1178 @@
+.typhoonApp {
+  --storm-bg: #031018;
+  --storm-panel: rgba(5, 24, 33, 0.86);
+  --storm-panel-strong: rgba(6, 29, 40, 0.96);
+  --storm-ink: #f3f8f6;
+  --storm-muted: #a9c0c4;
+  --storm-line: rgba(172, 227, 227, 0.2);
+  --storm-line-strong: rgba(172, 227, 227, 0.4);
+  --storm-teal: #67dfd8;
+  --storm-coral: #ff9276;
+  --storm-purple: #b5a6ff;
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  min-height: 620px;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--storm-ink);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(32, 111, 125, 0.18), transparent 44%),
+    var(--storm-bg);
+}
+
+.typhoonApp button,
+.typhoonApp input {
+  font: inherit;
+}
+
+.typhoonApp button:focus-visible,
+.typhoonApp input:focus-visible,
+.typhoonApp a:focus-visible {
+  outline: 2px solid var(--storm-teal);
+  outline-offset: 2px;
+}
+
+.canvasShell {
+  position: absolute;
+  inset: 0;
+  background: var(--storm-bg);
+}
+
+.canvasShell::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(27, 93, 109, 0.1), transparent 34%),
+    radial-gradient(circle at 50% 45%, transparent 35%, rgba(0, 6, 10, 0.46) 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.canvasShell canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.appHeader {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: max(18px, env(safe-area-inset-top)) 22px 18px;
+  pointer-events: none;
+}
+
+.headerIdentity,
+.backToGallery,
+.brandLockup,
+.playbackControls,
+.lessonStrip,
+.factCard,
+.settingsPanel,
+.hotspotDock,
+.trackPanel,
+.bottomControls {
+  pointer-events: auto;
+}
+
+.headerIdentity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.backToGallery {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--storm-line);
+  border-radius: 9px;
+  color: var(--storm-muted);
+  background: var(--storm-panel);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  backdrop-filter: blur(18px);
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.backToGallery:hover {
+  border-color: var(--storm-line-strong);
+  color: var(--storm-ink);
+  background: var(--storm-panel-strong);
+}
+
+.backToGallery svg {
+  width: 16px;
+  height: 16px;
+}
+
+.brandLockup {
+  display: flex;
+  min-width: 270px;
+  align-items: center;
+  gap: 10px;
+}
+
+.brandMark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid rgba(202, 255, 250, 0.42);
+  border-radius: 50%;
+  color: #082b32;
+  background:
+    radial-gradient(circle at 36% 30%, #e8ffff, #6ce2da 48%, #2a8ea0);
+  box-shadow:
+    0 0 0 4px rgba(103, 223, 216, 0.09),
+    0 0 28px rgba(75, 210, 206, 0.32);
+}
+
+.brandMark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.brandLockup h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 760;
+  line-height: 1.08;
+}
+
+.brandLockup p {
+  margin: 4px 0 0;
+  color: var(--storm-muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.playbackControls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px;
+  border: 1px solid var(--storm-line);
+  border-radius: 10px;
+  background: var(--storm-panel);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.iconButton {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--storm-ink);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.iconButton:hover,
+.iconButton.active {
+  border-color: var(--storm-line);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.iconButton.primaryAction {
+  color: #092a31;
+  background: var(--storm-teal);
+}
+
+.iconButton.primaryAction:hover {
+  border-color: #d9fffc;
+  background: #88eee8;
+}
+
+.iconButton svg,
+.settingsHeading button svg,
+.factCard button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.typhoonApp [data-tooltip]::after {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: 50%;
+  width: max-content;
+  max-width: 140px;
+  padding: 5px 7px;
+  transform: translateX(-50%) translateY(-2px);
+  border: 1px solid var(--storm-line);
+  border-radius: 6px;
+  color: var(--storm-ink);
+  background: var(--storm-panel-strong);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.typhoonApp [data-tooltip]:hover::after,
+.typhoonApp [data-tooltip]:focus-visible::after {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.speedControl {
+  display: grid;
+  width: 116px;
+  grid-template-columns: repeat(3, minmax(34px, 1fr));
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--storm-line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.speedControl button {
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  color: var(--storm-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.speedControl button:hover {
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.speedControl button.active {
+  color: #09282e;
+  background: var(--storm-teal);
+}
+
+.lessonStrip {
+  position: absolute;
+  z-index: 18;
+  top: max(84px, calc(env(safe-area-inset-top) + 65px));
+  left: 50%;
+  display: flex;
+  width: max-content;
+  max-width: min(720px, calc(100% - 48px));
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px 7px 7px;
+  transform: translateX(-50%);
+  border: 1px solid var(--storm-line);
+  border-radius: 9px;
+  background: var(--storm-panel);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px);
+}
+
+.lessonKicker {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 6px;
+  color: #08282f;
+  background: var(--storm-teal);
+  font-size: 12px;
+  font-weight: 780;
+}
+
+.lessonStrip p {
+  margin: 0;
+  color: var(--storm-ink);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.factCard,
+.settingsPanel {
+  position: absolute;
+  z-index: 35;
+  top: max(84px, calc(env(safe-area-inset-top) + 65px));
+  right: 22px;
+  width: min(360px, calc(100% - 44px));
+  border: 1px solid var(--storm-line);
+  border-radius: 12px;
+  background: var(--storm-panel-strong);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(22px);
+}
+
+.factCard {
+  padding: 17px 48px 17px 18px;
+}
+
+.factCard > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.factCard span {
+  color: var(--storm-teal);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: 0.08em;
+}
+
+.factCard strong {
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.factCard p {
+  margin: 10px 0 0;
+  color: #d2e1e1;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.factCard > button,
+.settingsHeading > button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: var(--storm-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.factCard > button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.factCard > button:hover,
+.settingsHeading > button:hover {
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settingsPanel {
+  padding: 10px 14px 14px;
+}
+
+.settingsHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 9px;
+  border-bottom: 1px solid var(--storm-line);
+}
+
+.settingsHeading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingsHeading strong {
+  font-size: 14px;
+}
+
+.settingsHeading span {
+  color: var(--storm-muted);
+  font-size: 11px;
+}
+
+.switchRow {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid rgba(172, 227, 227, 0.1);
+  color: #dce9e8;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.switchRow:last-child {
+  border-bottom: 0;
+}
+
+.switchControl {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 38px;
+}
+
+.switchControl input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switchTrack {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--storm-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.switchTrack::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--storm-muted);
+  content: "";
+  transition:
+    transform 150ms ease,
+    background 150ms ease;
+}
+
+.switchControl input:checked + .switchTrack {
+  border-color: rgba(103, 223, 216, 0.78);
+  background: rgba(103, 223, 216, 0.28);
+}
+
+.switchControl input:checked + .switchTrack::after {
+  transform: translateX(16px);
+  background: var(--storm-teal);
+}
+
+.switchControl input:focus-visible + .switchTrack {
+  outline: 2px solid var(--storm-teal);
+  outline-offset: 2px;
+}
+
+.hotspotDock {
+  position: absolute;
+  z-index: 16;
+  top: 50%;
+  left: 18px;
+  width: 158px;
+  padding: 10px;
+  transform: translateY(-48%);
+  border: 1px solid var(--storm-line);
+  border-radius: 11px;
+  background: var(--storm-panel);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px);
+}
+
+.hotspotDock > span {
+  display: block;
+  padding: 2px 5px 8px;
+  color: var(--storm-muted);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.12em;
+}
+
+.hotspotDock > div {
+  display: grid;
+  gap: 3px;
+}
+
+.hotspotDock button {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--storm-muted);
+  background: transparent;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hotspotDock button > span {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.hotspotDock button:hover,
+.hotspotDock button.active {
+  border-color: var(--storm-line);
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hotspotDock button.active > span {
+  border-color: var(--storm-teal);
+  background: var(--storm-teal);
+  box-shadow: 0 0 10px rgba(103, 223, 216, 0.6);
+}
+
+.trackPanel {
+  position: absolute;
+  z-index: 19;
+  top: 50%;
+  right: 20px;
+  width: 270px;
+  padding: 14px;
+  transform: translateY(-40%);
+  border: 1px solid var(--storm-line);
+  border-radius: 12px;
+  background: var(--storm-panel);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+}
+
+.trackHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.trackHeading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.trackHeading svg {
+  width: 16px;
+  height: 16px;
+  color: var(--storm-coral);
+}
+
+.trackHeading small {
+  color: var(--storm-muted);
+  font-size: 9px;
+}
+
+.trackOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 12px;
+  padding: 3px;
+  border: 1px solid var(--storm-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.trackOptions button {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--storm-muted);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trackOptions button:hover {
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.trackOptions button.active {
+  color: #2d160f;
+  background: var(--storm-coral);
+}
+
+.trackPanel > p {
+  min-height: 42px;
+  margin: 11px 0;
+  color: #d3e2e2;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.intensityLegend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid var(--storm-line);
+}
+
+.intensityLegend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--storm-muted);
+  font-size: 9px;
+}
+
+.intensityLegend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.disturbanceDot {
+  background: var(--storm-teal);
+}
+
+.matureDot {
+  background: var(--storm-coral);
+}
+
+.weakeningDot {
+  background: #a9b9c2;
+}
+
+.bottomControls {
+  position: absolute;
+  z-index: 24;
+  right: 20px;
+  bottom: max(17px, env(safe-area-inset-bottom));
+  left: 190px;
+  padding: 11px 13px 9px;
+  border: 1px solid var(--storm-line);
+  border-radius: 12px;
+  background: var(--storm-panel);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(20px);
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.scienceNote {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #d5e4e3;
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressMeta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.progressMeta > span {
+  color: var(--storm-teal);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 740;
+}
+
+.progressMeta button {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--storm-line);
+  border-radius: 6px;
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.progressMeta button:hover {
+  border-color: var(--storm-line-strong);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.progressTrack {
+  height: 3px;
+  margin: 8px 1px 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--storm-teal), var(--storm-purple), var(--storm-coral));
+  transition: width 80ms linear;
+}
+
+.stageBar {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.stageBar button {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--storm-muted);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.stageBar button:hover {
+  border-color: var(--storm-line);
+  color: var(--storm-ink);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.stageBar button.active {
+  border-color: rgba(103, 223, 216, 0.48);
+  color: #09282e;
+  background: var(--storm-teal);
+}
+
+.stageBar svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.shortLabel {
+  display: none;
+}
+
+.scaleNote {
+  margin: 7px 0 0;
+  color: rgba(169, 192, 196, 0.68);
+  font-size: 9px;
+  text-align: right;
+}
+
+.watermark {
+  position: absolute;
+  z-index: 7;
+  right: 22px;
+  bottom: 146px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(184, 218, 220, 0.5);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.watermark svg {
+  width: 13px;
+  height: 13px;
+}
+
+.sceneLabel,
+.sceneCaption,
+.globeLabel {
+  display: inline-flex;
+  width: max-content;
+  max-width: 180px;
+  padding: 5px 8px;
+  border: 1px solid rgba(172, 227, 227, 0.26);
+  border-radius: 6px;
+  color: #e7f4f2;
+  background: rgba(4, 21, 29, 0.82);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.sceneCaption {
+  padding: 6px 9px;
+  color: #cce1e1;
+  background: rgba(3, 17, 24, 0.72);
+}
+
+.pressureLabel {
+  border-color: rgba(255, 146, 118, 0.55);
+  color: #ffd8ce;
+}
+
+.eyeLabel {
+  border-color: rgba(103, 223, 216, 0.55);
+  color: #bffaf6;
+}
+
+.dangerLabel {
+  border-color: rgba(255, 146, 118, 0.58);
+  color: #ffd2c6;
+}
+
+.globeLabel {
+  padding: 4px 6px;
+  border-radius: 5px;
+  color: #dbe9e7;
+  background: rgba(4, 19, 27, 0.76);
+  font-size: 9px;
+}
+
+.highLabel {
+  border-color: rgba(181, 166, 255, 0.58);
+  color: #d9d1ff;
+}
+
+@media (max-width: 1080px) {
+  .brandLockup {
+    min-width: 0;
+  }
+
+  .brandLockup p {
+    display: none;
+  }
+
+  .bottomControls {
+    left: 178px;
+  }
+
+  .stageBar button {
+    gap: 5px;
+    padding: 0 6px;
+  }
+
+  .longLabel {
+    display: none;
+  }
+
+  .shortLabel {
+    display: inline;
+  }
+
+  .trackPanel {
+    width: 238px;
+  }
+}
+
+@media (max-width: 820px) {
+  .typhoonApp {
+    min-height: 560px;
+  }
+
+  .appHeader {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .backToGallery span,
+  .desktopOnly,
+  .speedControl {
+    display: none;
+  }
+
+  .backToGallery {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .brandLockup h1 {
+    font-size: 17px;
+  }
+
+  .brandMark {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .playbackControls {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .iconButton {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+
+  .lessonStrip {
+    top: max(74px, calc(env(safe-area-inset-top) + 58px));
+    max-width: calc(100% - 24px);
+  }
+
+  .lessonStrip p {
+    font-size: 11px;
+  }
+
+  .hotspotDock {
+    top: auto;
+    right: 12px;
+    bottom: 152px;
+    left: 12px;
+    width: auto;
+    padding: 7px;
+    transform: none;
+    overflow: hidden;
+  }
+
+  .hotspotDock > span {
+    display: none;
+  }
+
+  .hotspotDock > div {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .hotspotDock > div::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hotspotDock button {
+    min-height: 30px;
+    flex: 0 0 auto;
+    padding: 0 8px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .bottomControls {
+    right: 12px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 12px;
+    padding: 8px 9px 7px;
+  }
+
+  .scienceNote {
+    font-size: 9px;
+  }
+
+  .progressMeta > span {
+    display: none;
+  }
+
+  .stageBar {
+    gap: 3px;
+  }
+
+  .stageBar button {
+    min-height: 38px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px 2px;
+    font-size: 9px;
+  }
+
+  .stageBar svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .scaleNote {
+    display: none;
+  }
+
+  .trackPanel {
+    top: 142px;
+    right: 12px;
+    width: 216px;
+    padding: 10px;
+    transform: none;
+  }
+
+  .trackPanel > p {
+    display: none;
+  }
+
+  .trackOptions {
+    margin-top: 8px;
+  }
+
+  .intensityLegend {
+    padding-top: 7px;
+    margin-top: 7px;
+  }
+
+  .watermark {
+    display: none;
+  }
+
+  .factCard,
+  .settingsPanel {
+    top: max(74px, calc(env(safe-area-inset-top) + 58px));
+    right: 12px;
+    width: min(340px, calc(100% - 24px));
+  }
+}
+
+@media (max-width: 560px) {
+  .headerIdentity {
+    gap: 7px;
+  }
+
+  .brandLockup {
+    gap: 7px;
+  }
+
+  .brandLockup h1 {
+    max-width: 92px;
+    overflow: hidden;
+    font-size: 15px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lessonStrip {
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .lessonKicker {
+    padding: 6px 7px;
+    font-size: 10px;
+  }
+
+  .lessonStrip p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-height: 1.35;
+  }
+
+  .factCard {
+    padding: 13px 43px 13px 14px;
+  }
+
+  .factCard p {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .trackPanel {
+    top: 130px;
+    width: 200px;
+  }
+
+  .trackHeading small {
+    display: none;
+  }
+
+  .progressRow {
+    gap: 7px;
+  }
+
+  .progressMeta button {
+    min-height: 24px;
+    padding: 0 7px;
+    font-size: 9px;
+  }
+
+  .scienceNote {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .stageBar button {
+    min-height: 36px;
+  }
+
+  .sceneLabel,
+  .sceneCaption,
+  .globeLabel {
+    font-size: 8px;
+  }
+}
+
+@media (max-height: 700px) {
+  .lessonStrip {
+    top: 72px;
+  }
+
+  .hotspotDock {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .hotspotDock button {
+    min-height: 29px;
+  }
+
+  .bottomControls {
+    padding-top: 7px;
+  }
+
+  .stageBar button {
+    min-height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typhoonApp *,
+  .typhoonApp *::before,
+  .typhoonApp *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

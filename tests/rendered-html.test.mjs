@@ -37,12 +37,10 @@ test("server-renders the science museum project gallery", async () => {
 
   assert.match(html, /href="\/projects\/solar-system"/);
   assert.match(html, /href="\/projects\/volcano"/);
-  assert.equal((html.match(/data-status="available"/g) ?? []).length, 2);
-  assert.equal((html.match(/data-status="coming-soon"/g) ?? []).length, 2);
-  assert.doesNotMatch(
-    html,
-    /href="\/projects\/(?:water-cycle|typhoon)"/,
-  );
+  assert.match(html, /href="\/projects\/typhoon"/);
+  assert.equal((html.match(/data-status="available"/g) ?? []).length, 3);
+  assert.equal((html.match(/data-status="coming-soon"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /href="\/projects\/water-cycle"/);
 });
 
 test("server-renders the solar system at its project route", async () => {
@@ -79,6 +77,29 @@ test("server-renders the volcano at its project route", async () => {
     assert.match(html, new RegExp(`data-stage="${stage}"`));
   }
   assert.match(html, /地幔岩石发生了部分熔融/);
+});
+
+test("server-renders the typhoon story at its project route", async () => {
+  const response = await render("/projects/typhoon");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>台风的形成｜小小科学馆<\/title>/i);
+  assert.match(html, /data-testid="typhoon-app"/);
+  assert.match(html, /href="\/"/);
+  assert.match(html, /返回小小科学馆/);
+  for (const stage of [
+    "warm-ocean",
+    "convection",
+    "clustering",
+    "rotation",
+    "eye",
+    "track",
+  ]) {
+    assert.match(html, new RegExp(`data-stage="${stage}"`));
+  }
+  assert.match(html, /暖海水只是台风的/);
+  assert.match(html, /从头演示/);
 });
 
 test("keeps the solar-system feature files together", async () => {

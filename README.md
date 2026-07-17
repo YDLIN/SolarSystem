@@ -7,7 +7,7 @@
 - 小小太阳系：3D 展示太阳、八大行星和月球，支持公转、自转、昼夜、日食和月食互动演示。
 - 火山的形成：3D 展示洋中脊张裂、地幔减压熔融、岩浆上升、海底喷发和枕状熔岩形成。
 - 水循环：即将上线。
-- 台风的形成：即将上线。
+- 台风的形成：3D 展示暖海蓄能、水汽上升、云团聚集、旋转成涡、台风眼结构与西北太平洋典型路径。
 
 ## 技术栈
 
@@ -61,6 +61,11 @@ app/
       VolcanoApp.tsx               # 海底火山 3D 互动应用
       VolcanoApp.module.css        # 火山展厅局部样式
       volcanoModel.ts              # 阶段定义与动画计算
+    typhoon/
+      page.tsx                     # 台风子项目路由与分享元数据
+      TyphoonApp.tsx               # 台风形成与路径 3D 互动应用
+      TyphoonApp.module.css        # 台风展厅局部样式
+      typhoonModel.ts              # 阶段、云团、台风眼与球面路径模型
 public/
   favicon.svg                      # 网站图标
   og.png                           # 小小科学馆分享图

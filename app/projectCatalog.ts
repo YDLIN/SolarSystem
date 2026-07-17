@@ -63,6 +63,7 @@ export const SCIENCE_PROJECTS = [
     index: "04",
     description: "跟随风和海水，看一场巨大旋涡如何慢慢诞生。",
     visual: "typhoon",
-    status: "coming-soon",
+    status: "available",
+    href: "/projects/typhoon",
   },
 ] as const satisfies readonly ScienceProject[];
