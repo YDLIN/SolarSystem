@@ -1151,11 +1151,31 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
   const moonGroup = useRef<THREE.Group>(null);
   const phase = useRef(-0.86);
   const earth = PLANETS.find((body) => body.id === "earth")!;
+  const moonOrbit = useMemo(
+    () => ({
+      radiusX: 8,
+      radiusY: 2.7,
+      depth: 0.58,
+      points: Array.from({ length: 65 }, (_, index) => {
+        const angle = (index / 64) * Math.PI * 2;
+        return new THREE.Vector3(
+          Math.cos(angle) * 8,
+          Math.sin(angle) * 2.7,
+          Math.sin(angle) * 0.58,
+        );
+      }),
+    }),
+    [],
+  );
 
   useFrame((_, delta) => {
     if (!moonGroup.current) return;
     if (playing) phase.current += delta * 0.42 * speed;
-    moonGroup.current.position.y = Math.sin(phase.current) * 2.7;
+    moonGroup.current.position.set(
+      Math.cos(phase.current) * moonOrbit.radiusX,
+      Math.sin(phase.current) * moonOrbit.radiusY,
+      Math.sin(phase.current) * moonOrbit.depth,
+    );
   });
 
   return (
@@ -1198,15 +1218,12 @@ function LunarEclipseScene({ playing, speed, overlays }: { playing: boolean; spe
           <meshBasicMaterial color="#241d22" transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} />
         </mesh>
       )}
-      <group ref={moonGroup} position={[8, -2, 0]} name="body-moon">
+      <group ref={moonGroup} name="body-moon">
         <CelestialSphere body={MOON} labels={overlays.labels} speed={speed} playing={playing} scale={1.55} />
       </group>
       {overlays.orbits && (
         <Line
-          points={Array.from({ length: 65 }, (_, index) => {
-            const angle = (index / 64) * Math.PI * 2;
-            return new THREE.Vector3(Math.cos(angle) * 8, Math.sin(angle) * 2.7, Math.sin(angle) * 0.58);
-          })}
+          points={moonOrbit.points}
           color="#8e8b82"
           transparent
           opacity={0.34}
