@@ -1,15 +1,13 @@
-# 小小太阳系
+# 小小科学馆
 
-一个面向儿童科普的 3D 太阳系互动演示应用。项目使用 Next.js、vinext、React Three Fiber 和 Three.js 构建，支持观察八大行星公转、自转、昼夜变化，以及日食和月食的几何关系。
+一个面向儿童科普的互动科学项目集合。首页作为统一展厅入口，当前开放“小小太阳系”，后续可以继续加入火山、水循环、台风等自然科学动画。
 
-## 功能亮点
+## 当前内容
 
-- 3D 太阳系场景：展示太阳、八大行星、月球和主要轨道。
-- 运动演示：可播放、暂停、重置行星公转和自转。
-- 昼夜模式：观察地球自转、阳光照射和昼夜分界。
-- 日食与月食模式：用简化模型演示太阳、地球、月球之间的遮挡关系。
-- 可视化开关：可控制轨道、名称标签、运动箭头、阳光与影子、月球等辅助元素。
-- 中文界面：适合课堂、亲子讲解和基础天文科普。
+- 小小太阳系：3D 展示太阳、八大行星和月球，支持公转、自转、昼夜、日食和月食互动演示。
+- 火山的形成：即将上线。
+- 水循环：即将上线。
+- 台风的形成：即将上线。
 
 ## 技术栈
 
@@ -43,43 +41,35 @@ npm test
 npm run lint
 ```
 
-- `npm run dev`：启动本地开发服务。
-- `npm run build`：构建项目并验证 vinext 输出。
-- `npm test`：先构建项目，再运行几何与渲染相关测试。
-- `npm run lint`：运行 ESLint 检查。
-
 ## 项目结构
 
 ```text
 app/
-  SolarSystemApp.tsx      # 主要 3D 互动应用
-  LightStream.tsx         # 光照可视化组件
-  eclipseGeometry.ts      # 日食、月食几何计算
-  planetOrbit.ts          # 行星轨道计算
-  page.tsx                # 页面入口与分享元信息
-  layout.tsx              # 页面布局与全局元信息
-  globals.css             # 全局样式
+  page.tsx                         # 小小科学馆导航首页
+  ProjectCard.tsx                  # 统一项目卡片
+  projectCatalog.ts                # 项目清单与状态类型
+  home.css                         # 导航页样式与 CSS 科普插画
+  projects/
+    solar-system/
+      page.tsx                     # 太阳系子项目路由
+      SolarSystemApp.tsx           # 3D 互动应用
+      LightStream.tsx              # 光照可视化
+      eclipseGeometry.ts           # 日食、月食几何计算
+      planetOrbit.ts               # 行星轨道计算
 public/
-  favicon.svg             # 网站图标
-  og.png                  # 分享预览图
+  favicon.svg                      # 网站图标
+  og.png                           # 小小科学馆分享图
+  solar-system-og.png              # 小小太阳系分享图
 tests/
-  *.test.mjs              # 轨道、食相几何与渲染测试
+  *.test.mjs                       # 路由渲染、轨道和食相测试
 ```
+
+## 新增项目
+
+1. 在 `app/projectCatalog.ts` 登记项目标题、分类、简介、状态和视觉标识。
+2. 将开放项目设置为 `available` 并提供 `href`；未开放项目使用 `coming-soon`，类型会禁止误配入口地址。
+3. 在 `app/projects/<slug>/page.tsx` 创建对应的互动页面。
 
 ## 访问方式
 
-当前应用是公开的科普演示，不接入用户登录、鉴权或会话业务。部署配置中的 `.openai/hosting.json` 只保存站点项目和可选资源绑定信息。
-
-## 部署
-
-项目包含 Sites 部署配置：
-
-```text
-.openai/hosting.json
-```
-
-如需发布，先运行构建命令确认项目可以正常输出：
-
-```bash
-npm run build
-```
+当前站点为公开科普演示，不接入登录、鉴权、数据库或会话业务。部署配置中的 `.openai/hosting.json` 只保存 Sites 项目和可选资源绑定信息。

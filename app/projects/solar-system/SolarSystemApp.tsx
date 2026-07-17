@@ -3,6 +3,7 @@
 import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { Html, Line, OrbitControls, Stars } from "@react-three/drei";
 import {
+  ArrowLeft,
   Maximize,
   Moon,
   Orbit,
@@ -2011,11 +2012,19 @@ export default function SolarSystemApp() {
       </div>
 
       <header className="app-header">
-        <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true"><Sun /></span>
-          <div>
-            <h1>小小太阳系</h1>
-            <p>和星球一起转起来</p>
+        <div className="header-identity">
+          {/* vinext dev currently duplicates React when next/link is imported here. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a className="back-to-gallery" href="/" aria-label="返回小小科学馆">
+            <ArrowLeft />
+            <span>科学馆</span>
+          </a>
+          <div className="brand-lockup">
+            <span className="brand-mark" aria-hidden="true"><Sun /></span>
+            <div>
+              <h1>小小太阳系</h1>
+              <p>和星球一起转起来</p>
+            </div>
           </div>
         </div>
 

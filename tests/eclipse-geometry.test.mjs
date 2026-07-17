@@ -6,7 +6,7 @@ import {
   eclipseOrbitPosition,
   eclipseTargetPhase,
   nextForwardEclipsePhase,
-} from "../app/eclipseGeometry.ts";
+} from "../app/projects/solar-system/eclipseGeometry.ts";
 
 const EPSILON = 1e-9;
 

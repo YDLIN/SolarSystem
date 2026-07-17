@@ -1,0 +1,882 @@
+.museum-home {
+  --museum-paper: #f7f1e3;
+  --museum-paper-deep: #eee4cf;
+  --museum-ink: #19382f;
+  --museum-muted: #65736d;
+  --museum-line: rgba(25, 56, 47, 0.2);
+  --museum-green: #2f6d55;
+  --museum-yellow: #f5bf3c;
+  --museum-navy: #173b4f;
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 0 max(24px, calc((100vw - 1400px) / 2));
+  color: var(--museum-ink);
+  background: var(--museum-paper);
+}
+
+.paper-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.58;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(25, 56, 47, 0.12) 1px,
+    transparent 1.25px
+  );
+  background-size: 22px 22px;
+}
+
+.museum-header,
+.museum-intro,
+.project-exhibition,
+.museum-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.museum-header {
+  display: flex;
+  min-height: 94px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 36px;
+  border-bottom: 1px solid var(--museum-line);
+}
+
+.museum-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.museum-brand-mark {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 2px solid var(--museum-ink);
+  border-radius: 50%;
+  background: var(--museum-yellow);
+  box-shadow: 4px 4px 0 var(--museum-ink);
+}
+
+.museum-brand-mark > span:first-child {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--museum-ink);
+  border-radius: 50%;
+}
+
+.museum-brand-mark > span:nth-child(2),
+.museum-brand-mark > span:nth-child(3) {
+  position: absolute;
+  width: 31px;
+  height: 13px;
+  border: 1.5px solid var(--museum-ink);
+  border-radius: 50%;
+  transform: rotate(24deg);
+}
+
+.museum-brand-mark > span:nth-child(3) {
+  transform: rotate(-24deg);
+}
+
+.museum-brand > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.museum-brand strong {
+  font-size: 19px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.museum-brand small {
+  color: var(--museum-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.museum-header-note {
+  max-width: 490px;
+  margin: 0;
+  padding-left: 22px;
+  border-left: 3px solid var(--museum-yellow);
+  color: var(--museum-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.museum-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+  gap: clamp(46px, 7vw, 110px);
+  align-items: end;
+  padding: 64px 0 52px;
+}
+
+.museum-kicker,
+.section-heading p {
+  margin: 0 0 16px;
+  color: var(--museum-green);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.museum-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.museum-kicker::before {
+  display: grid;
+  width: 38px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid var(--museum-green);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  content: "04";
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.museum-intro h1 {
+  max-width: 920px;
+  margin: 0;
+  font-size: clamp(46px, 5.25vw, 78px);
+  font-weight: 900;
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+
+.museum-intro h1 span {
+  display: block;
+}
+
+.museum-intro-copy {
+  display: grid;
+  gap: 24px;
+  align-content: end;
+  padding-bottom: 7px;
+}
+
+.museum-intro-copy > p {
+  margin: 0;
+  color: var(--museum-muted);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.open-count {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--museum-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.open-count i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--museum-green);
+  box-shadow: 0 0 0 5px rgba(47, 109, 85, 0.14);
+}
+
+.project-exhibition {
+  padding-bottom: 62px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.section-heading p {
+  margin-bottom: 7px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: clamp(25px, 2.2vw, 34px);
+  letter-spacing: -0.04em;
+}
+
+.section-heading > span {
+  padding-bottom: 3px;
+  color: var(--museum-muted);
+  font-size: 13px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(252px, auto));
+  gap: 22px;
+}
+
+.project-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 28px 30px 26px;
+  border: 1px solid var(--museum-line);
+  border-radius: 26px;
+  color: var(--museum-ink);
+  background: var(--museum-paper-deep);
+  isolation: isolate;
+  text-decoration: none;
+}
+
+.project-card--solar-system {
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+  min-height: 530px;
+  padding: 34px 36px 31px;
+  color: #fff9e9;
+  background: var(--museum-navy);
+  box-shadow: 0 15px 0 rgba(25, 56, 47, 0.12);
+}
+
+.project-card--volcano {
+  grid-column: 3;
+  grid-row: 1;
+  background: #f2d4b2;
+}
+
+.project-card--water-cycle {
+  grid-column: 4;
+  grid-row: 1;
+  background: #b9dfea;
+}
+
+.project-card--typhoon {
+  grid-column: 3 / 5;
+  grid-row: 2;
+  background: #d7e9df;
+}
+
+.project-card.is-available {
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease;
+}
+
+.project-card.is-available:hover {
+  transform: translateY(-6px);
+  border-color: rgba(245, 191, 60, 0.9);
+  box-shadow: 0 18px 0 rgba(25, 56, 47, 0.14);
+}
+
+.project-card.is-available:focus-visible {
+  outline: 4px solid var(--museum-yellow);
+  outline-offset: 4px;
+}
+
+.project-card.is-coming-soon {
+  cursor: default;
+}
+
+.project-card-topline {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+}
+
+.project-card-topline > span:first-child {
+  opacity: 0.72;
+}
+
+.project-status {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.project-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.project-card--solar-system .project-status {
+  color: #ffe08a;
+}
+
+.project-card-copy {
+  position: relative;
+  z-index: 4;
+  max-width: 360px;
+  margin-top: auto;
+  padding-bottom: 58px;
+}
+
+.project-card-copy h3 {
+  margin: 0;
+  font-size: clamp(25px, 2vw, 38px);
+  letter-spacing: -0.05em;
+  line-height: 1.08;
+}
+
+.project-card--solar-system .project-card-copy h3 {
+  font-size: clamp(39px, 3.4vw, 56px);
+}
+
+.project-card-copy p {
+  margin: 13px 0 0;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.65;
+  opacity: 0.72;
+}
+
+.project-card--solar-system .project-card-copy {
+  max-width: 430px;
+}
+
+.project-card--solar-system .project-card-copy p {
+  font-size: 15px;
+}
+
+.project-card-footer {
+  position: absolute;
+  z-index: 5;
+  right: 28px;
+  bottom: 25px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.project-card--solar-system .project-card-footer {
+  right: 34px;
+  bottom: 30px;
+  left: 36px;
+}
+
+.project-arrow {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(25, 56, 47, 0.1);
+  font-size: 22px;
+  transition: transform 240ms ease;
+}
+
+.project-card--solar-system .project-arrow {
+  color: var(--museum-ink);
+  background: var(--museum-yellow);
+}
+
+.project-card.is-available:hover .project-arrow {
+  transform: rotate(45deg);
+}
+
+.project-illustration {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.solar-illustration {
+  right: -105px;
+  bottom: -108px;
+  width: 590px;
+  height: 475px;
+}
+
+.solar-glow,
+.mini-sun {
+  position: absolute;
+  z-index: 3;
+  top: 195px;
+  left: 235px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background: var(--museum-yellow);
+}
+
+.solar-glow {
+  inset: auto auto 136px 210px;
+  width: 162px;
+  height: 162px;
+  background: rgba(245, 191, 60, 0.12);
+  box-shadow: 0 0 0 28px rgba(245, 191, 60, 0.06);
+  animation: sun-pulse 5s ease-in-out infinite;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  transform: rotate(-12deg);
+}
+
+.orbit i {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset -5px -4px 0 rgba(0, 0, 0, 0.14);
+}
+
+.orbit-one {
+  inset: 98px 44px 72px 54px;
+}
+
+.orbit-one i {
+  top: 13px;
+  left: 60%;
+  width: 19px;
+  height: 19px;
+  background: #c9e5ee;
+}
+
+.orbit-two {
+  inset: 45px 3px 24px 0;
+}
+
+.orbit-two i {
+  top: 55%;
+  right: -10px;
+  width: 31px;
+  height: 31px;
+  background: #ef7b45;
+}
+
+.orbit-three {
+  inset: 0 -40px -26px -35px;
+}
+
+.orbit-three i {
+  bottom: 48px;
+  left: 19%;
+  width: 24px;
+  height: 24px;
+  background: #5e9fd4;
+}
+
+.volcano-illustration {
+  right: -28px;
+  bottom: -6px;
+  width: 260px;
+  height: 196px;
+}
+
+.volcano-cone {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  width: 226px;
+  height: 142px;
+  background: #e85838;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.volcano-cone::after {
+  position: absolute;
+  inset: 0;
+  background: rgba(25, 56, 47, 0.15);
+  clip-path: polygon(50% 0, 34% 100%, 0 100%);
+  content: "";
+}
+
+.lava-flow {
+  position: absolute;
+  z-index: 2;
+  right: 94px;
+  bottom: 32px;
+  width: 30px;
+  height: 112px;
+  background: #ff993f;
+  clip-path: polygon(30% 0, 72% 0, 100% 100%, 0 100%);
+}
+
+.smoke {
+  position: absolute;
+  z-index: 3;
+  border-radius: 50%;
+  background: #fff8e8;
+}
+
+.smoke-one {
+  top: 12px;
+  right: 91px;
+  width: 54px;
+  height: 54px;
+}
+
+.smoke-two {
+  top: 1px;
+  right: 58px;
+  width: 45px;
+  height: 45px;
+}
+
+.smoke-three {
+  top: 30px;
+  right: 47px;
+  width: 49px;
+  height: 49px;
+}
+
+.water-illustration {
+  right: -16px;
+  bottom: -14px;
+  width: 230px;
+  height: 186px;
+}
+
+.water-sun {
+  position: absolute;
+  top: 11px;
+  right: 27px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--museum-yellow);
+}
+
+.cloud {
+  position: absolute;
+  z-index: 2;
+  border-radius: 999px;
+  background: #fff9eb;
+}
+
+.cloud::before,
+.cloud::after {
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+  content: "";
+}
+
+.cloud-one {
+  top: 55px;
+  right: 42px;
+  width: 125px;
+  height: 45px;
+}
+
+.cloud-one::before {
+  top: -28px;
+  left: 23px;
+  width: 66px;
+  height: 66px;
+}
+
+.cloud-one::after {
+  top: -16px;
+  right: 12px;
+  width: 50px;
+  height: 50px;
+}
+
+.cloud-two {
+  top: 47px;
+  right: 129px;
+  width: 46px;
+  height: 35px;
+  opacity: 0.8;
+}
+
+.rain {
+  position: absolute;
+  z-index: 3;
+  top: 107px;
+  width: 4px;
+  height: 25px;
+  border-radius: 4px;
+  background: #3b91ad;
+  transform: rotate(12deg);
+}
+
+.rain-one {
+  right: 133px;
+}
+
+.rain-two {
+  right: 101px;
+  height: 34px;
+}
+
+.rain-three {
+  right: 69px;
+}
+
+.water-wave {
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: 225px;
+  height: 59px;
+  border-radius: 50% 50% 0 0;
+  background: #3b91ad;
+}
+
+.typhoon-illustration {
+  top: 46%;
+  right: 30px;
+  width: 190px;
+  height: 190px;
+  transform: translateY(-50%);
+}
+
+.typhoon-ring {
+  position: absolute;
+  border-style: solid;
+  border-color: #3b91ad transparent #3b91ad #3b91ad;
+  border-radius: 50%;
+  transform: rotate(25deg);
+}
+
+.ring-one {
+  inset: 0;
+  border-width: 24px;
+}
+
+.ring-two {
+  inset: 35px;
+  border-width: 18px;
+  transform: rotate(205deg);
+}
+
+.ring-three {
+  inset: 65px;
+  border-width: 12px;
+}
+
+.typhoon-eye {
+  position: absolute;
+  inset: 80px;
+  border-radius: 50%;
+  background: var(--museum-navy);
+}
+
+.museum-footer {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-top: 1px solid var(--museum-line);
+  color: var(--museum-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.museum-footer p {
+  margin: 0;
+}
+
+@keyframes sun-pulse {
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 1100px) {
+  .museum-home {
+    padding-inline: 34px;
+  }
+
+  .museum-intro {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .museum-intro-copy {
+    max-width: 650px;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+
+  .project-card,
+  .project-card--solar-system {
+    min-height: 430px;
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .project-card--solar-system {
+    grid-column: 1 / 3;
+    min-height: 500px;
+  }
+
+  .project-card--volcano {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .project-card--typhoon {
+    grid-column: 1 / 3;
+    grid-row: auto;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 720px) {
+  .museum-home {
+    padding-inline: 20px;
+  }
+
+  .museum-header {
+    min-height: 78px;
+  }
+
+  .museum-header-note {
+    display: none;
+  }
+
+  .museum-intro {
+    padding: 46px 0 40px;
+  }
+
+  .museum-intro h1 {
+    font-size: clamp(39px, 12vw, 56px);
+  }
+
+  .museum-intro-copy {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 19px;
+  }
+
+  .section-heading > span {
+    display: none;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card,
+  .project-card--solar-system,
+  .project-card--typhoon {
+    grid-column: auto;
+    min-height: 390px;
+    padding: 25px 24px 23px;
+    border-radius: 22px;
+  }
+
+  .project-card--solar-system {
+    min-height: 500px;
+  }
+
+  .project-card-copy {
+    max-width: 270px;
+    padding-bottom: 54px;
+  }
+
+  .project-card--solar-system .project-card-copy {
+    max-width: 310px;
+  }
+
+  .project-card-footer,
+  .project-card--solar-system .project-card-footer {
+    right: 24px;
+    bottom: 23px;
+    left: 24px;
+  }
+
+  .project-card--typhoon .project-card-copy {
+    margin-top: 210px;
+  }
+
+  .museum-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .museum-home {
+    padding-inline: 16px;
+  }
+
+  .museum-brand-mark {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .museum-intro {
+    padding-top: 38px;
+  }
+
+  .project-card--solar-system {
+    min-height: 475px;
+  }
+
+  .solar-illustration {
+    right: -184px;
+    bottom: -114px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .museum-home *,
+  .museum-home *::before,
+  .museum-home *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

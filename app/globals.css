@@ -24,7 +24,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--space);
   color: var(--ink);
 }
@@ -85,6 +85,7 @@ input:focus-visible {
 }
 
 .brand-lockup,
+.back-to-gallery,
 .playback-controls,
 .lesson-strip,
 .body-fact,
@@ -92,6 +93,41 @@ input:focus-visible {
 .eclipse-observation,
 .bottom-controls {
   pointer-events: auto;
+}
+
+.header-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.back-to-gallery {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--panel);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  backdrop-filter: blur(16px);
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.back-to-gallery:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: var(--panel-strong);
+}
+
+.back-to-gallery svg {
+  width: 16px;
+  height: 16px;
 }
 
 .brand-lockup {
@@ -646,6 +682,14 @@ input:focus-visible {
 
   .brand-lockup {
     min-width: 0;
+  }
+
+  .header-identity {
+    justify-content: space-between;
+  }
+
+  .back-to-gallery {
+    flex: 0 0 auto;
   }
 
   .brand-mark {

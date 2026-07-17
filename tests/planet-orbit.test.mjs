@@ -5,7 +5,7 @@ import {
   orbitPositionFromMeanAnomaly,
   orbitTangentFromEccentricAnomaly,
   solveEccentricAnomaly,
-} from "../app/planetOrbit.ts";
+} from "../app/projects/solar-system/planetOrbit.ts";
 
 const EPSILON = 1e-9;
 
