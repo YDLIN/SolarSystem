@@ -46,6 +46,7 @@ export default function Home() {
   const availableCount = SCIENCE_PROJECTS.filter(
     (project) => project.status === "available",
   ).length;
+  const totalCount = SCIENCE_PROJECTS.length;
 
   return (
     <main className="museum-home" data-testid="museum-home">
@@ -97,7 +98,7 @@ export default function Home() {
       >
         <div className="section-heading">
           <div>
-            <p>EXHIBITIONS · 01—04</p>
+            <p>EXHIBITIONS · 01—{totalCount.toString().padStart(2, "0")}</p>
             <h2 id="projects-heading">选择一个展厅</h2>
           </div>
           <span>每一次点击，都是新发现</span>
@@ -112,7 +113,10 @@ export default function Home() {
 
       <footer className="museum-footer">
         <p>小小科学馆 · 让自然现象变得看得见</p>
-        <p>{availableCount.toString().padStart(2, "0")} / 04 已开放</p>
+        <p>
+          {availableCount.toString().padStart(2, "0")} /{" "}
+          {totalCount.toString().padStart(2, "0")} 已开放
+        </p>
       </footer>
     </main>
   );

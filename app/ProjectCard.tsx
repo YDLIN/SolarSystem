@@ -34,6 +34,22 @@ function ProjectIllustration({ visual }: { visual: ProjectVisual }) {
     );
   }
 
+  if (visual === "seasons") {
+    return (
+      <div className="project-illustration seasons-illustration" aria-hidden="true">
+        <span className="season-sun" />
+        <span className="season-orbit">
+          <i className="season-earth" />
+        </span>
+        <span className="season-axis" />
+        <span className="season-quadrant season-spring">春</span>
+        <span className="season-quadrant season-summer">夏</span>
+        <span className="season-quadrant season-autumn">秋</span>
+        <span className="season-quadrant season-winter">冬</span>
+      </div>
+    );
+  }
+
   if (visual === "water-cycle") {
     return (
       <div className="project-illustration water-illustration" aria-hidden="true">

@@ -31,14 +31,21 @@ test("server-renders the science museum project gallery", async () => {
   assert.match(html, /从好奇出发，/);
   assert.match(html, /探索会动的科学世界/);
 
-  for (const project of ["小小太阳系", "火山的形成", "水循环", "台风的形成"]) {
+  for (const project of [
+    "小小太阳系",
+    "地球的四季",
+    "火山的形成",
+    "水循环",
+    "台风的形成",
+  ]) {
     assert.match(html, new RegExp(project));
   }
 
   assert.match(html, /href="\/projects\/solar-system"/);
+  assert.match(html, /href="\/projects\/seasons"/);
   assert.match(html, /href="\/projects\/volcano"/);
   assert.match(html, /href="\/projects\/typhoon"/);
-  assert.equal((html.match(/data-status="available"/g) ?? []).length, 3);
+  assert.equal((html.match(/data-status="available"/g) ?? []).length, 4);
   assert.equal((html.match(/data-status="coming-soon"/g) ?? []).length, 1);
   assert.doesNotMatch(html, /href="\/projects\/water-cycle"/);
 });
@@ -62,6 +69,22 @@ test("server-renders the solar system at its project route", async () => {
     html,
     /轨道形状与倾角参考真实数据；大小、距离和速度经过教学调整/,
   );
+});
+
+test("server-renders the Earth seasons exhibit at its project route", async () => {
+  const response = await render("/projects/seasons");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  assert.match(html, /<title>地球的四季｜小小科学馆<\/title>/i);
+  assert.match(html, /data-testid="seasons-app"/);
+  assert.match(html, /href="\/"/);
+  assert.match(html, /返回小小科学馆/);
+  assert.match(html, /四季主要来自地轴倾斜/);
+  assert.match(html, /北京/);
+  assert.match(html, /广州/);
+  assert.match(html, /哈尔滨/);
+  assert.match(html, /选择一年中的日期/);
 });
 
 test("server-renders the volcano at its project route", async () => {
