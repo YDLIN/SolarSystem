@@ -15,6 +15,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import {
+  CelestialSphere,
+  EARTH,
+  SUN,
+} from "../solar-system/SolarSystemApp";
 import styles from "./SeasonApp.module.css";
 import {
   AXIAL_TILT_DEGREES,
@@ -28,93 +33,9 @@ import type { CityId, SeasonState } from "./seasonModel";
 
 const ORBIT_RADIUS = 8.2;
 const AXIS_TILT_RADIANS = THREE.MathUtils.degToRad(AXIAL_TILT_DEGREES);
-
-function createEarthTexture() {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 512;
-  const context = canvas.getContext("2d");
-  if (!context) return null;
-
-  const ocean = context.createLinearGradient(0, 0, 0, canvas.height);
-  ocean.addColorStop(0, "#2d8fd1");
-  ocean.addColorStop(0.52, "#1769a8");
-  ocean.addColorStop(1, "#0d4379");
-  context.fillStyle = ocean;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  context.strokeStyle = "rgba(255,255,255,.12)";
-  context.lineWidth = 2;
-  for (let latitude = -60; latitude <= 60; latitude += 30) {
-    const y = ((90 - latitude) / 180) * canvas.height;
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(canvas.width, y);
-    context.stroke();
-  }
-
-  const drawLand = (
-    points: Array<[number, number]>,
-    fill: string,
-  ) => {
-    context.beginPath();
-    points.forEach(([x, y], index) => {
-      const px = (x / 360) * canvas.width;
-      const py = ((90 - y) / 180) * canvas.height;
-      if (index === 0) context.moveTo(px, py);
-      else context.lineTo(px, py);
-    });
-    context.closePath();
-    context.fillStyle = fill;
-    context.fill();
-    context.strokeStyle = "rgba(225,255,226,.3)";
-    context.stroke();
-  };
-
-  drawLand(
-    [
-      [8, 36], [18, 58], [48, 72], [88, 74], [130, 58], [158, 50],
-      [150, 30], [122, 18], [104, 5], [78, 8], [60, 28], [42, 36],
-    ],
-    "#65a96a",
-  );
-  drawLand(
-    [
-      [42, 30], [55, 12], [52, -12], [68, -34], [48, -38], [32, -10],
-      [25, 12],
-    ],
-    "#6aae6d",
-  );
-  drawLand(
-    [
-      [190, 58], [220, 72], [258, 66], [284, 46], [278, 18], [246, 10],
-      [222, 28],
-    ],
-    "#6cad70",
-  );
-  drawLand(
-    [
-      [272, 10], [292, -8], [286, -34], [268, -56], [252, -30], [258, -4],
-    ],
-    "#63a568",
-  );
-  drawLand(
-    [
-      [294, -12], [320, -20], [336, -38], [318, -48], [290, -34],
-    ],
-    "#75b273",
-  );
-
-  context.fillStyle = "rgba(255,255,255,.88)";
-  context.fillRect(0, 0, canvas.width, 18);
-  context.fillRect(0, canvas.height - 17, canvas.width, 17);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.anisotropy = 8;
-  return texture;
-}
+const SUN_SCALE = 1.42 / SUN.radius;
+const EARTH_SCALE = 0.9 / EARTH.radius;
+const SEASON_EARTH = { ...EARTH, axialTilt: 0 };
 
 function OrbitTrack() {
   const points = useMemo(
@@ -162,19 +83,13 @@ function SunBody() {
         decay={1.3}
         color="#fff0b0"
       />
-      <mesh>
-        <sphereGeometry args={[1.42, 64, 64]} />
-        <meshBasicMaterial color="#ffc645" />
-      </mesh>
-      <mesh scale={1.28}>
-        <sphereGeometry args={[1.42, 48, 48]} />
-        <meshBasicMaterial
-          color="#ffbb35"
-          transparent
-          opacity={0.11}
-          depthWrite={false}
-        />
-      </mesh>
+      <CelestialSphere
+        body={SUN}
+        labels={false}
+        speed={1}
+        playing={false}
+        scale={SUN_SCALE}
+      />
       <Html center position={[0, 2.05, 0]}>
         <span className={styles.bodyLabel}>太阳</span>
       </Html>
@@ -222,7 +137,6 @@ function EarthBody({
   state: SeasonState;
   position: THREE.Vector3;
 }) {
-  const texture = useMemo(() => createEarthTexture(), []);
   const sunDirection = useMemo(
     () => position.clone().multiplyScalar(-1).normalize(),
     [position],
@@ -245,10 +159,6 @@ function EarthBody({
     Math.sin(latitude),
     Math.cos(latitude) * Math.sin(longitude),
   ).multiplyScalar(0.93);
-
-  useEffect(() => {
-    return () => texture?.dispose();
-  }, [texture]);
 
   return (
     <group position={position}>
@@ -280,25 +190,13 @@ function EarthBody({
         />
 
         <group rotation={[0, spinAngle, 0]}>
-          <mesh castShadow receiveShadow>
-            <sphereGeometry args={[0.9, 64, 64]} />
-            <meshStandardMaterial
-              map={texture ?? undefined}
-              color={texture ? "#ffffff" : "#2a7fbd"}
-              roughness={0.78}
-              metalness={0}
-            />
-          </mesh>
-          <mesh scale={1.035}>
-            <sphereGeometry args={[0.9, 48, 48]} />
-            <meshBasicMaterial
-              color="#6bc8ff"
-              transparent
-              opacity={0.1}
-              side={THREE.BackSide}
-              depthWrite={false}
-            />
-          </mesh>
+          <CelestialSphere
+            body={SEASON_EARTH}
+            labels={false}
+            speed={1}
+            playing={false}
+            scale={EARTH_SCALE}
+          />
           <group position={markerPosition}>
             <mesh>
               <sphereGeometry args={[0.072, 20, 20]} />

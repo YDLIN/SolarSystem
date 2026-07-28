@@ -86,7 +86,7 @@ export type CelestialBody = {
   ring?: "major" | "minor";
 };
 
-const SUN: CelestialBody = {
+export const SUN: CelestialBody = {
   id: "sun",
   name: "太阳",
   radius: 2.25,
@@ -105,7 +105,7 @@ const SUN: CelestialBody = {
   fact: "太阳是一颗会自己发光、发热的恒星。",
 };
 
-const PLANETS: CelestialBody[] = [
+export const PLANETS: CelestialBody[] = [
   // J2000 approximate orbital elements:
   // https://ssd.jpl.nasa.gov/planets/approx_pos.html
   {
@@ -255,6 +255,8 @@ const PLANETS: CelestialBody[] = [
     fact: "海王星离太阳最远，那里刮着非常快的大风。",
   },
 ];
+
+export const EARTH = PLANETS.find((body) => body.id === "earth")!;
 
 const MOON: CelestialBody = {
   id: "moon",
@@ -643,7 +645,7 @@ type BodyProps = {
   scale?: number;
 };
 
-function CelestialSphere({
+export function CelestialSphere({
   body,
   labels = true,
   arrows = false,
@@ -1154,7 +1156,6 @@ function SolarSystemScene({
 }
 
 function DayNightScene({ playing, speed, overlays }: { playing: boolean; speed: number; overlays: OverlayState }) {
-  const earth = PLANETS.find((body) => body.id === "earth")!;
   return (
     <>
       <ambientLight intensity={overlays.light ? 0.22 : 1.5} />
@@ -1177,7 +1178,7 @@ function DayNightScene({ playing, speed, overlays }: { playing: boolean; speed: 
       </group>
       <group position={[3.2, 0, 0]} name="body-earth">
         <CelestialSphere
-          body={earth}
+          body={EARTH}
           labels={overlays.labels}
           arrows={overlays.arrows}
           marker
