@@ -24,6 +24,7 @@ import styles from "./SeasonApp.module.css";
 import {
   AXIAL_TILT_DEGREES,
   CITIES,
+  CITY_ORDER,
   DAYS_IN_YEAR,
   SEASON_KEY_DATES,
   formatDaylightHours,
@@ -364,7 +365,7 @@ function ObservationPanel({
           <strong>{state.seasonLabel}</strong>
         </div>
         <div className={styles.cityTabs} aria-label="选择观察城市">
-          {(Object.keys(CITIES) as CityId[]).map((cityId) => (
+          {CITY_ORDER.map((cityId) => (
             <button
               key={cityId}
               type="button"
@@ -402,7 +403,7 @@ function ObservationPanel({
 
 export default function SeasonApp() {
   const [dayOfYear, setDayOfYear] = useState(SEASON_KEY_DATES[0].dayOfYear);
-  const [city, setCity] = useState<CityId>("beijing");
+  const [city, setCity] = useState<CityId>("guangzhou");
   const [playing, setPlaying] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [resetKey, setResetKey] = useState(0);

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   AXIAL_TILT_DEGREES,
+  CITY_ORDER,
   SEASON_KEY_DATES,
   formatDayOfYear,
   getSeasonState,
@@ -11,6 +12,10 @@ import {
 
 const [springEquinox, summerSolstice, autumnEquinox, winterSolstice] =
   SEASON_KEY_DATES;
+
+test("defaults the city selector order to Guangzhou, Beijing, then Harbin", () => {
+  assert.deepEqual(CITY_ORDER, ["guangzhou", "beijing", "harbin"]);
+});
 
 test("equinoxes keep all three Chinese cities close to twelve hours of daylight", () => {
   for (const keyDate of [springEquinox, autumnEquinox]) {

@@ -40,6 +40,11 @@ export type SeasonState = {
 
 export const AXIAL_TILT_DEGREES = 23.44;
 export const DAYS_IN_YEAR = 365;
+export const CITY_ORDER: readonly CityId[] = [
+  "guangzhou",
+  "beijing",
+  "harbin",
+];
 
 export const CITIES: Record<CityId, CityProfile> = {
   beijing: {
